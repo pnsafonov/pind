@@ -7,5 +7,6 @@ func main() {
 }
 
 func doMain() {
-	_ = pkg.GetProcs0()
+	//_ = pkg.GetProcs0()
+	pkg.DoTicker()
 }

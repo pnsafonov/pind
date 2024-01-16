@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/prometheus/procfs"
 	"golang.org/x/sys/unix"
+	"time"
 )
 
 func GetProcs0() error {
@@ -48,4 +49,29 @@ func GetProcs0() error {
 	}
 
 	return nil
+}
+
+func DoTicker() {
+	//ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker(1000 * time.Millisecond)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case t := <-ticker.C:
+				fmt.Println("Before sleep", t)
+				time.Sleep(3 * time.Second)
+				fmt.Println("After Sleep", t)
+			}
+		}
+	}()
+
+	//time.Sleep(1600 * time.Millisecond)
+	time.Sleep(30 * time.Second)
+	ticker.Stop()
+	done <- true
+	fmt.Println("Ticker stopped")
 }
