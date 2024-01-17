@@ -4,3 +4,7 @@ sched_getaffinity
 go get github.com/sirupsen/logrus@v1.9.3
 go get gopkg.in/natefinch/lumberjack.v2
 go get gopkg.in/yaml.v3
+
+# numa
+go get github.com/lrita/numa@v1.0.2
+go get github.com/johnsonjh/gonuma
