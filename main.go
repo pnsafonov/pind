@@ -8,5 +8,11 @@ func main() {
 
 func doMain() {
 	//_ = pkg.GetProcs0()
-	pkg.DoTicker()
+	//pkg.DoTicker()
+	doService()
+}
+
+func doService() {
+	ctx := pkg.NewContext()
+	pkg.RunService(ctx)
 }
