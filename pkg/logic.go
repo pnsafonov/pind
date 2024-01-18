@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
+	"pind/pkg/config"
 	"time"
 )
 
@@ -78,15 +79,20 @@ func DoTicker() {
 }
 
 func PrintProcs1(patterns []string) error {
-	filters := []*NameFilter{
-		&NameFilter{
+	filters := []*config.ProcFilter{
+		&config.ProcFilter{
 			Patterns: patterns,
 		},
 	}
 	return PrintProcs0(filters)
 }
 
-func PrintProcs0(filters []*NameFilter) error {
+func PrintProcs2() error {
+	filters := config.NewDefaultFilters()
+	return PrintProcs0(filters)
+}
+
+func PrintProcs0(filters []*config.ProcFilter) error {
 	procs, err := filterProcsInfo0(filters)
 	if err != nil {
 		log.Errorf("PrintProcs0 filterProcsInfo0 err = %v", err)

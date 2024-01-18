@@ -4,12 +4,9 @@ import (
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
+	"pind/pkg/config"
 	"strings"
 )
-
-type NameFilter struct {
-	Patterns []string
-}
 
 type ProcInfo struct {
 	Proc    procfs.Proc
@@ -24,7 +21,7 @@ type ThreadInfo struct {
 	CpuSet unix.CPUSet
 }
 
-func filterProcsInfo0(filters []*NameFilter) ([]*ProcInfo, error) {
+func filterProcsInfo0(filters []*config.ProcFilter) ([]*ProcInfo, error) {
 	procs, err := procfs.AllProcs()
 	if err != nil {
 		log.Errorf("filterProcsInfo0 procfs.AllProcs err = %v", err)
@@ -89,7 +86,7 @@ func filterProcsInfo0(filters []*NameFilter) ([]*ProcInfo, error) {
 // filterProc
 // true  -     matched by filter
 // false - not matched by filter
-func filterProc(filters []*NameFilter, comm string, cmd0 []string) bool {
+func filterProc(filters []*config.ProcFilter, comm string, cmd0 []string) bool {
 	l0 := len(filters)
 	for i := 0; i < l0; i++ {
 		filter := filters[i]
@@ -100,7 +97,7 @@ func filterProc(filters []*NameFilter, comm string, cmd0 []string) bool {
 	return false
 }
 
-func filterProc0(filter *NameFilter, comm string, cmd0 []string) bool {
+func filterProc0(filter *config.ProcFilter, comm string, cmd0 []string) bool {
 	l0 := len(filter.Patterns)
 	for i := 0; i < l0; i++ {
 		pattern := filter.Patterns[i]

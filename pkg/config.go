@@ -1,9 +1,7 @@
 package pkg
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"pind/pkg/config"
 	"pind/pkg/utils/os_utils"
 )
@@ -15,7 +13,7 @@ const (
 func loadConfigAndInit(ctx *Context) error {
 	err := loadConfigFile(ctx)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "loadConfig, loadConfigFile = err = %v", err)
+		log.Errorf("loadConfig, loadConfigFile = err = %v", err)
 		return err
 	}
 
@@ -37,7 +35,7 @@ func loadConfigFile(ctx *Context) error {
 
 	config0, err := config.Load(confPath)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "loadConfigFile, config.Load = err = %v", err)
+		log.Errorf("loadConfigFile, config.Load = err = %v", err)
 		return err
 	}
 

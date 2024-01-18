@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+const (
+	ProcFilterTypeName = "name"
+)
+
 type Config struct {
 	Log     *Log     `yaml:"log"`
 	Service *Service `yaml:"service"`
@@ -30,13 +34,26 @@ type Rotator struct {
 }
 
 type Service struct {
-	Interval int       `yaml:"interval"` // ms
-	Filters  []*Filter `yaml:"filters"`
+	Interval int           `yaml:"interval"` // ms
+	Filters  []*ProcFilter `yaml:"filters"`
 }
 
-type Filter struct {
+type ProcFilter struct {
 	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
+}
+
+func NewDefaultFilters() []*ProcFilter {
+	filter0 := &ProcFilter{
+		Type:     ProcFilterTypeName,
+		Patterns: []string{"/usr/bin/kvm"},
+	}
+	filter1 := &ProcFilter{
+		Type:     ProcFilterTypeName,
+		Patterns: []string{"/usr/bin/qemu-system-x86_64"},
+	}
+	filters := []*ProcFilter{filter0, filter1}
+	return filters
 }
 
 func NewDefaultConfig() *Config {
@@ -60,6 +77,9 @@ func NewDefaultConfig() *Config {
 		Rotator:        rotator,
 		StdErrEnabled:  true,
 	}
+
+	filters := NewDefaultFilters()
+	service.Filters = filters
 
 	config.Log = log0
 	config.Service = service

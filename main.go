@@ -40,15 +40,14 @@ func doMain(args []string) {
 			}
 		case "--print-procs":
 			{
+				patterns := ""
+
 				i0 := i + 1
 				if i0 < l0 {
-					patterns := args[i0]
-					printProcs1(patterns)
-				} else {
-					exitMoreArgs()
+					patterns = args[i0]
 				}
-				i++
-				continue
+
+				printProcs1(patterns)
 			}
 		case "-c", "--config":
 			{
@@ -109,8 +108,15 @@ func printNuma() {
 }
 
 func printProcs1(pattern string) {
-	patterns := strings.Split(pattern, ",")
-	err := pkg.PrintProcs1(patterns)
+	var err error
+
+	if pattern != "" {
+		patterns := strings.Split(pattern, ",")
+		err = pkg.PrintProcs1(patterns)
+	} else {
+		err = pkg.PrintProcs2()
+	}
+
 	exit1(err)
 }
 
@@ -122,7 +128,7 @@ func exit0(err error) {
 }
 
 func exitMoreArgs() {
-	_, _ = fmt.Fprintf(os.Stderr, "Please specify more args.")
+	log.Errorf("Please specify more args.")
 	os.Exit(1)
 }
 
@@ -130,19 +136,11 @@ func exit1(err error) {
 	if err == nil {
 		os.Exit(0)
 	}
-	_, _ = fmt.Fprintf(os.Stderr, "err = %v\n", err)
-	os.Exit(1)
-}
-
-func exit2(err error) {
-	if err == nil {
-		os.Exit(0)
-	}
-	log.Errorf("exit with err = %v\n", err)
+	log.Errorf("err = %v\n", err)
 	os.Exit(1)
 }
 
 func runService(ctx *pkg.Context) {
 	err := pkg.RunService(ctx)
-	exit2(err)
+	exit1(err)
 }
