@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Log     *Log     `yaml:"log"`
-	Service *Service `yaml:"log"`
+	Service *Service `yaml:"service"`
 }
 
 type Log struct {
@@ -30,7 +30,13 @@ type Rotator struct {
 }
 
 type Service struct {
-	Interval int `yaml:"interval"` // ms
+	Interval int       `yaml:"interval"` // ms
+	Filters  []*Filter `yaml:"filters"`
+}
+
+type Filter struct {
+	Type     string   `yaml:"type"`
+	Patterns []string `yaml:"patterns"`
 }
 
 func NewDefaultConfig() *Config {

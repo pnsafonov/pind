@@ -97,7 +97,7 @@ func PrintProcs0(filters []*NameFilter) error {
 	for i := 0; i < l0; i++ {
 		proc := procs[i]
 		fmt.Printf("% 6d %s %v\n", proc.Proc.PID, proc.Stat.Comm, proc.Cmd)
-
+		proc.Stat.CPUTime()
 		l1 := len(proc.Threads)
 		for j := 0; j < l1; j++ {
 			thread := proc.Threads[j]

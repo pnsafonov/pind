@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -10,6 +11,9 @@ import (
 )
 
 type Context struct {
+	ConfigPath string
+	Service    bool
+
 	Config *config.Config
 
 	Done chan int
@@ -18,13 +22,23 @@ type Context struct {
 func NewContext() *Context {
 	ctx := &Context{}
 	ctx.Done = make(chan int, 1)
+	ctx.ConfigPath = DefConfPath
+	ctx.Service = false
 	ctx.Config = config.NewDefaultConfig()
 	return ctx
 }
 
-func RunService(ctx *Context) {
+func RunService(ctx *Context) error {
+	err := loadConfigAndInit(ctx)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "RunService, loadConfigAndInit err = %v", err)
+		return err
+	}
+
 	doSignals(ctx)
 	doLoop(ctx)
+
+	return nil
 }
 
 func doSignals(ctx *Context) {
@@ -66,4 +80,8 @@ func doLoop(ctx *Context) {
 			log.Infof("After Sleep  %v", t)
 		}
 	}
+}
+
+func handleTimer(ctx *Context, time0 time.Time) {
+
 }

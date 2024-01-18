@@ -1,0 +1,15 @@
+---
+
+log:
+  level: warning
+service:
+  interval: 1001
+  filters:
+    - type: name
+      patterns:
+        - qemu
+        - deb11-1
+    - type: name
+      patterns:
+        - qemu
+        - deb11-2

@@ -26,3 +26,14 @@ func TestLog1(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestLog2(t *testing.T) {
+	path0 := "tests/pind2.yml"
+	config, err := Load(path0)
+	if err != nil {
+		t.FailNow()
+	}
+	if config.Service.Interval != 1001 {
+		t.FailNow()
+	}
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"pind/pkg"
 	"pind/pkg/numa"
@@ -18,6 +19,8 @@ func main() {
 }
 
 func doMain(args []string) {
+	configPath := pkg.DefConfPath
+	service0 := false
 
 	l0 := len(args)
 	for i := 1; i < l0; i++ {
@@ -47,15 +50,42 @@ func doMain(args []string) {
 				i++
 				continue
 			}
+		case "-c", "--config":
+			{
+				i0 := i + 1
+				if i0 < l0 {
+					configPath = args[i0]
+				}
+				i++
+				continue
+			}
+		case "-s", "--service", "--daemon":
+			{
+				service0 = true
+				continue
+			}
 		}
+
 	}
 
+	ctx := pkg.NewContext()
+	ctx.Service = service0
+	ctx.ConfigPath = configPath
+
+	if service0 {
+		runService(ctx)
+	}
+
+	// default action
 	printNuma()
 }
 
 func printHelp() {
 	helpMsg := `Usage: pind [OPTIONS]
 pin programs to CPU (affinity)
+
+  -s, --service, --daemon    run service (daemon)
+  -c, --config               config file location, default is /etc/pind/pind.conf
 
   -h, --help                 display this help and exit
   -v, --version              output version information and exit
@@ -104,7 +134,15 @@ func exit1(err error) {
 	os.Exit(1)
 }
 
-func doService() {
-	ctx := pkg.NewContext()
-	pkg.RunService(ctx)
+func exit2(err error) {
+	if err == nil {
+		os.Exit(0)
+	}
+	log.Errorf("exit with err = %v\n", err)
+	os.Exit(1)
+}
+
+func runService(ctx *pkg.Context) {
+	err := pkg.RunService(ctx)
+	exit2(err)
 }
