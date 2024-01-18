@@ -5,7 +5,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 	"pind/pkg/config"
+	"sort"
 	"strings"
+	"time"
 )
 
 type ProcInfo struct {
@@ -13,6 +15,9 @@ type ProcInfo struct {
 	Stat    procfs.ProcStat
 	Cmd     []string
 	Threads []*ThreadInfo
+
+	time time.Time
+	cpu0 float64
 }
 
 type ThreadInfo struct {
@@ -80,6 +85,11 @@ func filterProcsInfo0(filters []*config.ProcFilter) ([]*ProcInfo, error) {
 
 	}
 
+	// sort by id
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Proc.PID < result[j].Proc.PID
+	})
+
 	return result, nil
 }
 
@@ -121,4 +131,31 @@ func arrayContainsPattern(arr []string, pattern string) bool {
 		}
 	}
 	return false
+}
+
+// isProcInfoSame
+// true  - the same process
+// false - different processes
+func isProcInfoSame(pi0 *ProcInfo, pi1 *ProcInfo) bool {
+	if pi0 == nil || pi1 == nil {
+		return false
+	}
+	if pi0.Proc.PID != pi1.Proc.PID {
+		return false
+	}
+	if pi0.Stat.Starttime != pi1.Stat.Starttime {
+		return false
+	}
+	return true
+}
+
+func getSameProc(procs0 []*ProcInfo, proc1 *ProcInfo) (*ProcInfo, bool) {
+	l0 := len(procs0)
+	for i := 0; i < l0; i++ {
+		proc0 := procs0[i]
+		if isProcInfoSame(proc0, proc1) {
+			return proc0, true
+		}
+	}
+	return nil, false
 }
