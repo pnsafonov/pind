@@ -107,7 +107,7 @@ func PrintNuma0() error {
 			_, _ = fmt.Printf("mask %064b\n", ni.Mask[0])
 
 			for j := 1; j < l1; j++ {
-				_, _ = fmt.Printf("     %b\n", ni.Mask[j])
+				_, _ = fmt.Printf("     %064b\n", ni.Mask[j])
 			}
 		}
 

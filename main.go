@@ -5,10 +5,12 @@ import (
 	"os"
 	"pind/pkg"
 	"pind/pkg/numa"
+	"strings"
 )
 
 func main() {
 	//_ = pkg.GetProcs0()
+	//_ = pkg.PrintProcs0()
 	//pkg.DoTicker()
 	//doService()
 	//numa.PrintNuma0()
@@ -33,6 +35,18 @@ func doMain(args []string) {
 			{
 				printNuma()
 			}
+		case "--print-procs":
+			{
+				i0 := i + 1
+				if i0 < l0 {
+					patterns := args[i0]
+					printProcs1(patterns)
+				} else {
+					exitMoreArgs()
+				}
+				i++
+				continue
+			}
 		}
 	}
 
@@ -46,7 +60,8 @@ pin programs to CPU (affinity)
   -h, --help                 display this help and exit
   -v, --version              output version information and exit
 
-      --print-numa          print information about numa and exit`
+      --print-procs "pattern0,pattern1"       print process filtered by ps aux | grep pattern0 | grep pattern1 
+      --print-numa                            print information about numa and exit`
 
 	fmt.Println(helpMsg)
 	os.Exit(0)
@@ -63,10 +78,29 @@ func printNuma() {
 	exit0(err)
 }
 
+func printProcs1(pattern string) {
+	patterns := strings.Split(pattern, ",")
+	err := pkg.PrintProcs1(patterns)
+	exit1(err)
+}
+
 func exit0(err error) {
 	if err == nil {
 		os.Exit(0)
 	}
+	os.Exit(1)
+}
+
+func exitMoreArgs() {
+	_, _ = fmt.Fprintf(os.Stderr, "Please specify more args.")
+	os.Exit(1)
+}
+
+func exit1(err error) {
+	if err == nil {
+		os.Exit(0)
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "err = %v\n", err)
 	os.Exit(1)
 }
 

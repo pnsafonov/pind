@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	"github.com/prometheus/procfs"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 	"time"
 )
@@ -74,4 +75,38 @@ func DoTicker() {
 	ticker.Stop()
 	done <- true
 	fmt.Println("Ticker stopped")
+}
+
+func PrintProcs1(patterns []string) error {
+	filters := []*NameFilter{
+		&NameFilter{
+			Patterns: patterns,
+		},
+	}
+	return PrintProcs0(filters)
+}
+
+func PrintProcs0(filters []*NameFilter) error {
+	procs, err := filterProcsInfo0(filters)
+	if err != nil {
+		log.Errorf("PrintProcs0 filterProcsInfo0 err = %v", err)
+		return err
+	}
+
+	l0 := len(procs)
+	for i := 0; i < l0; i++ {
+		proc := procs[i]
+		fmt.Printf("% 6d %s %v\n", proc.Proc.PID, proc.Stat.Comm, proc.Cmd)
+
+		l1 := len(proc.Threads)
+		for j := 0; j < l1; j++ {
+			thread := proc.Threads[j]
+
+			fmt.Printf("% 10d %s\n", thread.Thread.PID, thread.Stat.Comm)
+		}
+
+		fmt.Printf("\n")
+	}
+
+	return nil
 }
