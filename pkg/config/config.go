@@ -34,8 +34,15 @@ type Rotator struct {
 }
 
 type Service struct {
-	Interval int           `yaml:"interval"` // ms
-	Filters  []*ProcFilter `yaml:"filters"`
+	Interval  int           `yaml:"interval"` // ms
+	Threshold float64       `yaml:"threshold"`
+	Filters   []*ProcFilter `yaml:"filters"`
+	Pool      Pool          `yaml:"pool"`
+}
+
+type Pool struct {
+	Idle Intervals
+	Load Intervals
 }
 
 type ProcFilter struct {
@@ -67,10 +74,6 @@ func NewDefaultConfig() *Config {
 		LocalTime:  true,
 	}
 
-	service := &Service{
-		Interval: 1000,
-	}
-
 	log0 := &Log{
 		Level:          logrus.DebugLevel,
 		RotatorEnabled: false,
@@ -78,8 +81,18 @@ func NewDefaultConfig() *Config {
 		StdErrEnabled:  true,
 	}
 
+	pool := Pool{
+		Idle: Intervals{Values: []int{0, 1}},
+		Load: Intervals{Values: []int{2, 3}},
+	}
+
 	filters := NewDefaultFilters()
-	service.Filters = filters
+	service := &Service{
+		Interval:  1000,
+		Threshold: 150,
+		Filters:   filters,
+		Pool:      pool,
+	}
 
 	config.Log = log0
 	config.Service = service

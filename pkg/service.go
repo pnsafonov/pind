@@ -130,6 +130,7 @@ func handler(ctx *Context, time0 time.Time) error {
 	setTime(procs1, time0)
 	//printProcs0(procs1, time0)
 
+	procs0 := ctx.last
 	l0 := len(ctx.last)
 	if l0 == 0 {
 		// first run, nothing to do
@@ -142,12 +143,12 @@ func handler(ctx *Context, time0 time.Time) error {
 		return nil
 	}
 
-	timeDelta := calcTimeDelta(ctx.last, procs1)
+	timeDelta := calcTimeDelta(procs0, procs1)
 
 	for i := 0; i < l1; i++ {
 		proc1 := procs1[i]
 		// proc0
-		proc0, ok := getSameProc(ctx.last, proc1)
+		proc0, ok := getSameProc(procs0, proc1)
 		if !ok {
 			continue
 		}
@@ -157,6 +158,8 @@ func handler(ctx *Context, time0 time.Time) error {
 	}
 	ctx.last = procs1
 	//printProcs1(procs1, time0, timeDelta)
+
+	pinProcs(ctx, procs1)
 
 	return nil
 }
@@ -176,4 +179,19 @@ func calcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
 		cpu1 = 100
 	}
 	return cpu1
+}
+
+func pinProcs(ctx *Context, procs []*ProcInfo) {
+	threshold := ctx.Config.Service.Threshold
+
+	l0 := len(procs)
+	for i := 0; i < l0; i++ {
+		proc := procs[i]
+
+		isHigh := proc.cpu0 >= threshold
+		if !isHigh {
+			continue
+		}
+
+	}
 }

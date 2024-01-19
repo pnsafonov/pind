@@ -13,3 +13,6 @@ service:
       patterns:
         - qemu
         - deb11-2
+  pool:
+    idle: 124-127
+    load: 32-47
