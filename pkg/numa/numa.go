@@ -6,15 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//type Bitmask []uint64
-
-//const (
-//	cpuSetSize = 16
-//)
-//
-//type cpuMask uint64
-//type CPUSet []cpuMask
-
 var (
 	initError  error
 	nodeMaxId  = -1

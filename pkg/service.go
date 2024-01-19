@@ -120,11 +120,23 @@ func printProcs1(procs []*ProcInfo, time0 time.Time, timeDelta float64) {
 }
 
 func handler(ctx *Context, time0 time.Time) error {
+	err := calcCPU(ctx, time0)
+	if err != nil {
+		log.Errorf("handler, calcCPU err = %v", err)
+		return err
+	}
+
+	pinProcs(ctx, ctx.last)
+
+	return nil
+}
+
+func calcCPU(ctx *Context, time0 time.Time) error {
 	filters := ctx.Config.Service.Filters
 
 	procs1, err := filterProcsInfo0(filters)
 	if err != nil {
-		log.Errorf("handler, filterProcsInfo0 err = %v", err)
+		log.Errorf("calcCPU, filterProcsInfo0 err = %v", err)
 		return err
 	}
 	setTime(procs1, time0)
@@ -159,8 +171,6 @@ func handler(ctx *Context, time0 time.Time) error {
 	ctx.last = procs1
 	//printProcs1(procs1, time0, timeDelta)
 
-	pinProcs(ctx, procs1)
-
 	return nil
 }
 
@@ -185,13 +195,54 @@ func pinProcs(ctx *Context, procs []*ProcInfo) {
 	threshold := ctx.Config.Service.Threshold
 
 	l0 := len(procs)
+
 	for i := 0; i < l0; i++ {
 		proc := procs[i]
 
-		isHigh := proc.cpu0 >= threshold
-		if !isHigh {
+		isLoad := proc.cpu0 >= threshold
+		if !isLoad {
+			// idle
+			markOnIdle(ctx, proc)
 			continue
 		}
 
+		markOnLoadg(ctx, proc)
 	}
+
+	for i := 0; i < l0; i++ {
+		proc := procs[i]
+
+		isLoad := proc.cpu0 >= threshold
+		if !isLoad {
+			// idle
+			pinOnIdle(ctx, proc)
+			continue
+		}
+
+		pinOnLoad(ctx, proc)
+	}
+}
+
+func markOnIdle(ctx *Context, proc *ProcInfo) {
+
+}
+
+func markOnLoad(ctx *Context, proc *ProcInfo) {
+
+}
+
+func pinOnIdle(ctx *Context, proc *ProcInfo) {
+
+}
+
+func pinOnLoad(ctx *Context, proc *ProcInfo) {
+	//selection := ctx.Config.Service.Selection
+	//patterns := selection.Patterns
+	//
+	//l0 := len(proc.Threads)
+	//for i := 0; i < l0; i++ {
+	//	thread := proc.Threads[i]
+	//
+	//	isSelected := isThreadSelected(thread, patterns)
+	//}
 }

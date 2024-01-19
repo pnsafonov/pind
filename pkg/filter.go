@@ -159,3 +159,17 @@ func getSameProc(procs0 []*ProcInfo, proc1 *ProcInfo) (*ProcInfo, bool) {
 	}
 	return nil, false
 }
+
+// isThreadSelected
+// true  - thread selected by pattern
+// false - thread not selected
+func isThreadSelected(thead *ThreadInfo, patterns []string) bool {
+	l1 := len(patterns)
+	for j := 0; j < l1; j++ {
+		pattern := patterns[j]
+		if strings.Contains(thead.Stat.Comm, pattern) {
+			return true
+		}
+	}
+	return false
+}

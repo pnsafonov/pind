@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	ProcFilterTypeName = "name"
+	ProcFilterTypeName  = "name"
+	SelectionTypeSingle = "single" // core per thread
 )
 
 type Config struct {
@@ -38,6 +39,7 @@ type Service struct {
 	Threshold float64       `yaml:"threshold"`
 	Filters   []*ProcFilter `yaml:"filters"`
 	Pool      Pool          `yaml:"pool"`
+	Selection Selection     `yaml:"selection"`
 }
 
 type Pool struct {
@@ -46,6 +48,11 @@ type Pool struct {
 }
 
 type ProcFilter struct {
+	Type     string   `yaml:"type"`
+	Patterns []string `yaml:"patterns"`
+}
+
+type Selection struct {
 	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
 }
@@ -86,12 +93,18 @@ func NewDefaultConfig() *Config {
 		Load: Intervals{Values: []int{2, 3}},
 	}
 
+	selection := Selection{
+		Type:     SelectionTypeSingle,
+		Patterns: []string{"CPU", "/KVM"},
+	}
+
 	filters := NewDefaultFilters()
 	service := &Service{
 		Interval:  1000,
 		Threshold: 150,
 		Filters:   filters,
 		Pool:      pool,
+		Selection: selection,
 	}
 
 	config.Log = log0
