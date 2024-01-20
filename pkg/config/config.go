@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	ProcFilterTypeName  = "name"
-	SelectionTypeSingle = "single" // core per thread
+	ProcFilterTypeName     = "name"
+	SelectionTypeSingle    = "single" // core per thread
+	PinCoresAlgoTypeSingle = "single"
 )
 
 type Config struct {
@@ -35,11 +36,12 @@ type Rotator struct {
 }
 
 type Service struct {
-	Interval  int           `yaml:"interval"` // ms
-	Threshold float64       `yaml:"threshold"`
-	Filters   []*ProcFilter `yaml:"filters"`
-	Pool      Pool          `yaml:"pool"`
-	Selection Selection     `yaml:"selection"`
+	Interval     int           `yaml:"interval"` // ms
+	Threshold    float64       `yaml:"threshold"`
+	Filters      []*ProcFilter `yaml:"filters"`
+	Pool         Pool          `yaml:"pool"`
+	Selection    Selection     `yaml:"selection"`
+	PinCoresAlgo *PinCoresAlgo `yaml:"pin_cores_algo"`
 }
 
 type Pool struct {
@@ -55,6 +57,12 @@ type ProcFilter struct {
 type Selection struct {
 	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
+}
+
+type PinCoresAlgo struct {
+	Type        string `yaml:"type"`
+	Selected    int    `yaml:"selection_cores_count"`
+	NotSelected int    `yaml:"selection_cores_count"`
 }
 
 func NewDefaultFilters() []*ProcFilter {
@@ -90,7 +98,7 @@ func NewDefaultConfig() *Config {
 
 	pool := Pool{
 		Idle: Intervals{Values: []int{0, 1}},
-		Load: Intervals{Values: []int{2, 3}},
+		Load: Intervals{Values: []int{2, 3, 4, 5}},
 	}
 
 	selection := Selection{
@@ -98,13 +106,20 @@ func NewDefaultConfig() *Config {
 		Patterns: []string{"CPU", "/KVM"},
 	}
 
+	pinCoresAlgo := &PinCoresAlgo{
+		Type:        PinCoresAlgoTypeSingle,
+		Selected:    1, // 1 core per thread
+		NotSelected: 2, // 2 cores for other threads
+	}
+
 	filters := NewDefaultFilters()
 	service := &Service{
-		Interval:  1000,
-		Threshold: 150,
-		Filters:   filters,
-		Pool:      pool,
-		Selection: selection,
+		Interval:     1000,
+		Threshold:    150,
+		Filters:      filters,
+		Pool:         pool,
+		Selection:    selection,
+		PinCoresAlgo: pinCoresAlgo,
 	}
 
 	config.Log = log0

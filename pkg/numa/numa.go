@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"github.com/lrita/numa"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 var (
 	initError  error
 	nodeMaxId  = -1
 	nodesCount = 0
-	nodes      []*nodeInfo
+	nodes      []*NodeInfo
 )
 
 func init() {
@@ -23,7 +24,7 @@ func init() {
 	nodeMaxId = numa.MaxNodeID()
 	nodesCount = nodeMaxId + 1
 
-	nodes = make([]*nodeInfo, 0, nodesCount)
+	nodes = make([]*NodeInfo, 0, nodesCount)
 	for i := 0; i < nodesCount; i++ {
 		mask0, err0 := numa.NodeToCPUMask(i)
 		if err0 != nil {
@@ -40,13 +41,13 @@ func init() {
 	}
 }
 
-type nodeInfo struct {
+type NodeInfo struct {
 	Mask  []uint64 // Bitmask, CPUSet, unix.CPUSet
 	Cpus  []int
 	Index int
 }
 
-func maskToNodeInfo(mask []uint64) (*nodeInfo, error) {
+func maskToNodeInfo(mask []uint64) (*NodeInfo, error) {
 	l0 := len(mask)
 	if l0 > 16 {
 		return nil, fmt.Errorf("rocessor_has_too_many_cores")
@@ -61,13 +62,13 @@ func maskToNodeInfo(mask []uint64) (*nodeInfo, error) {
 		for j := 0; j < 64; j++ {
 			v0 := uint64(1) << j
 			if m0&v0 != 0 {
-				num1 := num0 + j
-				cpus = append(cpus, num1)
+				cpu := num0 + j
+				cpus = append(cpus, cpu)
 			}
 		}
 	}
 
-	ni := &nodeInfo{
+	ni := &NodeInfo{
 		Mask: mask,
 		Cpus: cpus,
 	}
@@ -106,4 +107,41 @@ func PrintNuma0() error {
 		_, _ = fmt.Printf("\n")
 	}
 	return nil
+}
+
+// GetNodes - get information about NUMA
+func GetNodes() ([]*NodeInfo, error) {
+	if initError != nil {
+		return nil, initError
+	}
+	return nodes, nil
+}
+
+func NodesToFullMask(nodes []*NodeInfo) unix.CPUSet {
+	mask := unix.CPUSet{}
+
+	l0 := len(nodes)
+	for i := 0; i < l0; i++ {
+		node := nodes[i]
+
+		l1 := len(node.Cpus)
+		for j := 0; j < l1; j++ {
+			cpu := node.Cpus[j]
+			mask.Set(cpu)
+		}
+	}
+
+	return mask
+}
+
+func CpusToMask(cpus []int) unix.CPUSet {
+	mask := unix.CPUSet{}
+
+	l0 := len(cpus)
+	for i := 0; i < l0; i++ {
+		cpu := cpus[i]
+		mask.Set(cpu)
+	}
+
+	return mask
 }

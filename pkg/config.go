@@ -20,6 +20,13 @@ func loadConfigAndInit(ctx *Context) error {
 	config0 := ctx.Config
 	initLogger(config0.Log)
 
+	pool, err := NewPool(config0.Service.Pool)
+	if err != nil {
+		log.Errorf("loadConfig, NewPool = err = %v", err)
+		return err
+	}
+	ctx.pool = pool
+
 	return nil
 }
 

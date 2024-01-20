@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 	"os"
 	"os/signal"
 	"pind/pkg/config"
@@ -20,6 +21,7 @@ type Context struct {
 
 	Done chan int
 
+	pool *Pool
 	last []*ProcInfo
 }
 
@@ -194,19 +196,19 @@ func calcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
 func pinProcs(ctx *Context, procs []*ProcInfo) {
 	threshold := ctx.Config.Service.Threshold
 
+	used := make(map[int]byte)
 	l0 := len(procs)
-
 	for i := 0; i < l0; i++ {
 		proc := procs[i]
 
 		isLoad := proc.cpu0 >= threshold
 		if !isLoad {
 			// idle
-			markOnIdle(ctx, proc)
+			_ = markOnIdle(ctx, proc)
 			continue
 		}
 
-		markOnLoadg(ctx, proc)
+		markOnLoad(ctx, proc, used)
 	}
 
 	for i := 0; i < l0; i++ {
@@ -223,12 +225,43 @@ func pinProcs(ctx *Context, procs []*ProcInfo) {
 	}
 }
 
-func markOnIdle(ctx *Context, proc *ProcInfo) {
+func markOnIdle(ctx *Context, proc *ProcInfo) error {
+	var err error
+	l0 := len(proc.Threads)
+	for i := 0; i < l0; i++ {
+		thread := proc.Threads[i]
 
+		if isMasksEqual(thread.CpuSet, ctx.pool.IdleMask) {
+			continue
+		}
+
+		err0 := unix.SchedSetaffinity(thread.Thread.PID, &ctx.pool.IdleMask)
+		if err0 != nil {
+			err = err0
+		}
+	}
+	return err
 }
 
-func markOnLoad(ctx *Context, proc *ProcInfo) {
+func markOnLoad(ctx *Context, proc *ProcInfo, used map[int]byte) {
+	algo := ctx.Config.Service.PinCoresAlgo
 
+	l0 := len(proc.Threads)
+	for i := 0; i < l0; i++ {
+		thread := proc.Threads[i]
+
+		// check what cpu from load mask only
+		if isMaskInSet(thread.CpuSet, ctx.pool.LoadMask) {
+			count := thread.CpuSet.Count()
+			// checks cpu count for validity
+			if !isLoadCpuCountValid(algo, count) {
+				continue
+			}
+
+			// mark cpu as used
+			MaskIntoMap(thread.CpuSet, used)
+		}
+	}
 }
 
 func pinOnIdle(ctx *Context, proc *ProcInfo) {
