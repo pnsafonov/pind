@@ -23,6 +23,8 @@ type Context struct {
 
 	pool *Pool
 	last []*ProcInfo
+
+	state PinState
 }
 
 func NewContext() *Context {
@@ -85,7 +87,7 @@ func doLoop(ctx *Context) {
 			//time.Sleep(3 * time.Second)
 			//log.Infof("After Sleep  %v", t)
 
-			handler(ctx, t)
+			_ = handler(ctx, t)
 		}
 	}
 }
@@ -128,7 +130,13 @@ func handler(ctx *Context, time0 time.Time) error {
 		return err
 	}
 
-	pinProcs(ctx, ctx.last)
+	//pinProcs(ctx, ctx.last)
+	ctx.state.UpdateProcs(ctx.last)
+	err = ctx.state.PinCores(ctx)
+	if err != nil {
+		log.Errorf("handler, ctx.state.PinCores err = %v", err)
+		return err
+	}
 
 	return nil
 }

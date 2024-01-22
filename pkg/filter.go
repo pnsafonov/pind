@@ -20,6 +20,8 @@ type ProcInfo struct {
 	cpu0 float64
 }
 
+// ThreadInfo - current (actual) information about thread
+// filled once, and not modified
 type ThreadInfo struct {
 	Thread procfs.Proc
 	Stat   procfs.ProcStat
@@ -172,4 +174,12 @@ func isThreadSelected(thead *ThreadInfo, patterns []string) bool {
 		}
 	}
 	return false
+}
+
+func getThreadSelection(thead *ThreadInfo, patterns []string) ThreadSelection {
+	isSelected := isThreadSelected(thead, patterns)
+	if isSelected {
+		return ThreadSelectionYes
+	}
+	return ThreadSelectionNo
 }

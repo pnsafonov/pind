@@ -27,6 +27,8 @@ func loadConfigAndInit(ctx *Context) error {
 	}
 	ctx.pool = pool
 
+	ctx.state = NewPinState()
+
 	return nil
 }
 
