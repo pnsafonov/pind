@@ -18,6 +18,7 @@ type ProcInfo struct {
 
 	time time.Time
 	cpu0 float64
+	load bool
 }
 
 // ThreadInfo - current (actual) information about thread

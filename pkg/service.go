@@ -3,7 +3,6 @@ package pkg
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 	"os"
 	"os/signal"
 	"pind/pkg/config"
@@ -132,9 +131,16 @@ func handler(ctx *Context, time0 time.Time) error {
 
 	//pinProcs(ctx, ctx.last)
 	ctx.state.UpdateProcs(ctx.last)
-	err = ctx.state.PinCores(ctx)
+
+	err = ctx.state.PinIdle()
 	if err != nil {
-		log.Errorf("handler, ctx.state.PinCores err = %v", err)
+		log.Errorf("handler, ctx.state.PinLoad err = %v", err)
+		return err
+	}
+
+	err = ctx.state.PinLoad(ctx)
+	if err != nil {
+		log.Errorf("handler, ctx.state.PinLoad err = %v", err)
 		return err
 	}
 
@@ -143,6 +149,7 @@ func handler(ctx *Context, time0 time.Time) error {
 
 func calcCPU(ctx *Context, time0 time.Time) error {
 	filters := ctx.Config.Service.Filters
+	threshold := ctx.Config.Service.Threshold
 
 	procs1, err := filterProcsInfo0(filters)
 	if err != nil {
@@ -177,6 +184,7 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 
 		cpu0 := calcCpuLoad0(proc0, proc1, timeDelta)
 		proc1.cpu0 = cpu0
+		proc1.load = cpu0 > threshold
 	}
 	ctx.last = procs1
 	//printProcs1(procs1, time0, timeDelta)
@@ -195,95 +203,6 @@ func calcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
 
 	cpu0 := total0 / timeDelta
 	cpu1 := cpu0 * 100
-	if cpu1 > 100 {
-		cpu1 = 100
-	}
+
 	return cpu1
-}
-
-func pinProcs(ctx *Context, procs []*ProcInfo) {
-	threshold := ctx.Config.Service.Threshold
-
-	used := make(map[int]byte)
-	l0 := len(procs)
-	for i := 0; i < l0; i++ {
-		proc := procs[i]
-
-		isLoad := proc.cpu0 >= threshold
-		if !isLoad {
-			// idle
-			_ = markOnIdle(ctx, proc)
-			continue
-		}
-
-		markOnLoad(ctx, proc, used)
-	}
-
-	for i := 0; i < l0; i++ {
-		proc := procs[i]
-
-		isLoad := proc.cpu0 >= threshold
-		if !isLoad {
-			// idle
-			pinOnIdle(ctx, proc)
-			continue
-		}
-
-		pinOnLoad(ctx, proc)
-	}
-}
-
-func markOnIdle(ctx *Context, proc *ProcInfo) error {
-	var err error
-	l0 := len(proc.Threads)
-	for i := 0; i < l0; i++ {
-		thread := proc.Threads[i]
-
-		if isMasksEqual(thread.CpuSet, ctx.pool.IdleMask) {
-			continue
-		}
-
-		err0 := unix.SchedSetaffinity(thread.Thread.PID, &ctx.pool.IdleMask)
-		if err0 != nil {
-			err = err0
-		}
-	}
-	return err
-}
-
-func markOnLoad(ctx *Context, proc *ProcInfo, used map[int]byte) {
-	algo := ctx.Config.Service.PinCoresAlgo
-
-	l0 := len(proc.Threads)
-	for i := 0; i < l0; i++ {
-		thread := proc.Threads[i]
-
-		// check what cpu from load mask only
-		if isMaskInSet(thread.CpuSet, ctx.pool.LoadMask) {
-			count := thread.CpuSet.Count()
-			// checks cpu count for validity
-			if !isLoadCpuCountValid(algo, count) {
-				continue
-			}
-
-			// mark cpu as used
-			MaskIntoMap(thread.CpuSet, used)
-		}
-	}
-}
-
-func pinOnIdle(ctx *Context, proc *ProcInfo) {
-
-}
-
-func pinOnLoad(ctx *Context, proc *ProcInfo) {
-	//selection := ctx.Config.Service.Selection
-	//patterns := selection.Patterns
-	//
-	//l0 := len(proc.Threads)
-	//for i := 0; i < l0; i++ {
-	//	thread := proc.Threads[i]
-	//
-	//	isSelected := isThreadSelected(thread, patterns)
-	//}
 }

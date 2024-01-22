@@ -28,6 +28,7 @@ func loadConfigAndInit(ctx *Context) error {
 	ctx.pool = pool
 
 	ctx.state = NewPinState()
+	ctx.state.Idle = NewIdlePinCpu(ctx)
 
 	return nil
 }

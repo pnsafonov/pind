@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
+	"pind/pkg/numa"
 )
 
 type PinThreadState int
@@ -27,6 +28,7 @@ var (
 type PinState struct {
 	Procs map[int]*PinProc // pid -> PinProc, add/remove/change processes
 	Used  map[int]*PinProc // cpu -> PinProc, add/remove/change used cpu
+	Idle  PinCpus          // mask for idle threads
 }
 
 type PinProc struct {
@@ -48,6 +50,20 @@ type PinThread struct {
 type PinCpus struct {
 	Cpus   []int       // must be assigned, same as CpuSet
 	CpuSet unix.CPUSet // must be assigned, same as Cpus
+}
+
+func NewIdlePinCpu(ctx *Context) PinCpus {
+	idle := ctx.Config.Service.Pool.Idle.Values
+	l0 := len(idle)
+
+	cpuSet := numa.CpusToMask(idle)
+	pinCpus := PinCpus{
+		Cpus:   make([]int, l0),
+		CpuSet: cpuSet,
+	}
+	copy(pinCpus.Cpus, idle)
+
+	return pinCpus
 }
 
 func NewPinState() PinState {
@@ -105,11 +121,10 @@ func (x *PinState) UpdateProcs(procs []*ProcInfo) {
 			continue
 		}
 		// free cpu on process end
-		l1 := len(proc.Threads)
-		for i := 0; i < l1; i++ {
-			thread := proc.Threads[i]
+		for _, thread := range proc.Threads {
 			freeThreadCpus(state, thread)
 		}
+
 		// process is finished
 		delete(state.Procs, pid)
 	}
@@ -137,6 +152,9 @@ func freeThreadCpus(state *PinState, thread *PinThread) {
 		cpu := thread.Cpus.Cpus[i]
 		delete(state.Used, cpu)
 	}
+	thread.Cpus.Zero()
+	//thread.Cpus.Cpus = thread.Cpus.Cpus[:0]
+	//ZeroMask(thread.Cpus.CpuSet)
 }
 
 func getThreadByPID(threads []*ThreadInfo, pid int) (*ThreadInfo, bool) {
@@ -181,6 +199,8 @@ func (x *PinProc) UpdateProc(proc *ProcInfo, state *PinState) {
 			pinThread.UpdateThread(thread)
 		}
 	}
+
+	x.ProcInfo = proc
 }
 
 // isThreadCanBeFreed - checks what that can be deleted
@@ -224,7 +244,56 @@ func (x *PinThread) UpdateThread(thread *ThreadInfo) {
 	x.ThreadInfo = thread
 }
 
-func (x *PinState) PinCores(ctx *Context) error {
+//func (x *PinState) FreeIdleCores(ctx *Context) {
+//	state := x
+//	threshold := ctx.Config.Service.Threshold
+//
+//	for _, procInfo := range state.Procs {
+//		isLoad := procInfo.ProcInfo.cpu0 >= threshold
+//		if isLoad {
+//			continue
+//		}
+//
+//		for _, thread := range procInfo.Threads {
+//			inited := thread.Cpus.IsAnyInited()
+//			if !inited {
+//				continue
+//			}
+//
+//			freeThreadCpus(state, thread)
+//		}
+//	}
+//}
+
+func (x *PinState) PinIdle() error {
+	var err error
+	state := x
+
+	for _, procInfo := range state.Procs {
+		if procInfo.ProcInfo.load {
+			continue
+		}
+
+		for _, thread := range procInfo.Threads {
+			inited := thread.Cpus.IsAnyInited()
+			if inited {
+				freeThreadCpus(state, thread)
+			}
+
+			equal := isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet)
+			if !equal {
+				err0 := unix.SchedSetaffinity(thread.ThreadInfo.Thread.PID, &state.Idle.CpuSet)
+				if err0 != nil {
+					err = err0
+				}
+			}
+		}
+	}
+
+	return err
+}
+
+func (x *PinState) PinLoad(ctx *Context) error {
 	var err error
 	state := x
 	patterns := ctx.Config.Service.Selection.Patterns
@@ -232,6 +301,9 @@ func (x *PinState) PinCores(ctx *Context) error {
 
 	// update selection
 	for _, procInfo := range state.Procs {
+		if !procInfo.ProcInfo.load {
+			continue
+		}
 		for _, threadInfo := range procInfo.Threads {
 			if threadInfo.Selected == ThreadSelectionYes || threadInfo.Selected == ThreadSelectionNo {
 				continue
@@ -243,6 +315,9 @@ func (x *PinState) PinCores(ctx *Context) error {
 
 	// assign masks
 	for _, procInfo := range state.Procs {
+		if !procInfo.ProcInfo.load {
+			continue
+		}
 		// we must check, that at least 1 not selected thread exists
 		containsNotSelectedThread := procInfo.ContainsNotSelectedThread()
 		if containsNotSelectedThread {
@@ -250,8 +325,7 @@ func (x *PinState) PinCores(ctx *Context) error {
 			if !procInfo.NotSelected.IsInited(algo.NotSelected) {
 				err0 := procInfo.NotSelected.PinCores(ctx, algo.NotSelected, procInfo)
 				if err0 != nil {
-					// if no free cores, stop here
-					return err0
+					err = err0
 				}
 			}
 		}
@@ -269,18 +343,20 @@ func (x *PinState) PinCores(ctx *Context) error {
 					// use different cores for selected threads
 					err0 := threadInfo.Cpus.PinCores(ctx, algo.Selected, procInfo)
 					if err0 != nil {
-						// if no free cores, stop here
-						return err0
+						err = err0
 					}
 				}
 				continue
 			}
-			log.Errorf("PinCores, execution must not be here!")
+			log.Errorf("PinLoad, execution must not be here!")
 		}
 	}
 
 	// pin cores
 	for _, procInfo := range state.Procs {
+		if !procInfo.ProcInfo.load {
+			continue
+		}
 		for _, threadInfo := range procInfo.Threads {
 			if isMasksEqual(threadInfo.ThreadInfo.CpuSet, threadInfo.Cpus.CpuSet) {
 				// actual mask is set
@@ -295,6 +371,16 @@ func (x *PinState) PinCores(ctx *Context) error {
 	}
 
 	return err
+}
+
+func (x *PinCpus) Zero() {
+	x.Cpus = x.Cpus[:0]
+	x.CpuSet = unix.CPUSet{}
+}
+
+func (x *PinCpus) IsAnyInited() bool {
+	l0 := len(x.Cpus)
+	return l0 > 0
 }
 
 func (x *PinCpus) IsInited(count int) bool {
@@ -317,6 +403,7 @@ func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
 		used[cpu] = procInfo
 		x.Cpus = append(x.Cpus, cpu)
 		if len(x.Cpus) >= count {
+			x.CpuSet = numa.CpusToMask(x.Cpus)
 			return nil
 		}
 	}

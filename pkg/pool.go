@@ -80,6 +80,34 @@ func MaskIntoMap(mask unix.CPUSet, map0 map[int]byte) {
 	}
 }
 
+func IsMaskNotZero(mask unix.CPUSet) bool {
+	l0 := len(mask)
+	for i := 0; i < l0; i++ {
+		m0 := uint64(mask[i])
+		if m0 != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func ZeroMask(mask unix.CPUSet) {
+	isNotZero := IsMaskNotZero(mask)
+	if isNotZero {
+		ZeroMask0(mask)
+	}
+}
+
+func ZeroMask0(mask unix.CPUSet) {
+	l0 := len(mask)
+	for i := 0; i < l0; i++ {
+		m0 := uint64(mask[i])
+		if m0 != 0 {
+			m0 = 0
+		}
+	}
+}
+
 // isLoadCpuCountValid - checks is cpu count valid in mask
 // of thread on load
 func isLoadCpuCountValid(algo *config.PinCoresAlgo, count int) bool {
