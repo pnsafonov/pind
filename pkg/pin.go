@@ -282,17 +282,17 @@ func (x *PinState) PinIdle() error {
 		}
 
 		for _, thread := range procInfo.Threads {
-			inited := thread.Cpus.IsAnyInited()
-			if inited {
+			if thread.Cpus.IsAnyInited() {
 				freeThreadCpus(state, thread)
 			}
 
-			equal := isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet)
-			if !equal {
-				err0 := schedSetAffinity(thread.ThreadInfo.Stat, &state.Idle.CpuSet)
-				if err0 != nil {
-					err = err0
-				}
+			if isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet) {
+				continue
+			}
+
+			err0 := schedSetAffinity(thread.ThreadInfo.Stat, &state.Idle.CpuSet)
+			if err0 != nil {
+				err = err0
 			}
 		}
 
@@ -370,6 +370,11 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			continue
 		}
 		for _, threadInfo := range procInfo.Threads {
+			if !threadInfo.Cpus.IsAnyInited() {
+				// no free cpu's cores left
+				continue
+			}
+
 			if isMasksEqual(threadInfo.ThreadInfo.CpuSet, threadInfo.Cpus.CpuSet) {
 				// actual mask is set
 				continue
@@ -386,10 +391,10 @@ func (x *PinState) PinLoad(ctx *Context) error {
 }
 
 func schedSetAffinity(procStat procfs.ProcStat, set *unix.CPUSet) error {
-	//count0 := set.Count()
-	//if count0 == 0 {
-	//	log.Debugf("schedSetAffinity catched empty")
-	//}
+	count0 := set.Count()
+	if count0 == 0 {
+		log.Debugf("schedSetAffinity catched empty")
+	}
 
 	pid := procStat.PID
 	//cpus := MaskToArray(set)
@@ -417,6 +422,7 @@ func (x *PinCpus) IsInited(count int) bool {
 }
 
 func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
+	err := ErrNoFreeCores
 	load := ctx.Config.Service.Pool.Load
 	used := ctx.state.Used
 
@@ -432,10 +438,11 @@ func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
 		x.Cpus = append(x.Cpus, cpu)
 		//log.Debugf("PinCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
 		if len(x.Cpus) >= count {
-			x.CpuSet = numa.CpusToMask(x.Cpus)
-			return nil
+			err = nil
+			break
 		}
 	}
 
-	return ErrNoFreeCores
+	x.CpuSet = numa.CpusToMask(x.Cpus)
+	return err
 }
