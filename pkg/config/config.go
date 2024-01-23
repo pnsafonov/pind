@@ -98,7 +98,8 @@ func NewDefaultConfig() *Config {
 
 	pool := Pool{
 		Idle: Intervals{Values: []int{0, 1}},
-		Load: Intervals{Values: []int{2, 3, 4, 5}},
+		//Load: Intervals{Values: []int{2, 3, 4, 5}},
+		Load: Intervals{Values: []int{2, 3, 4, 5, 6}},
 	}
 
 	selection := Selection{
@@ -114,8 +115,9 @@ func NewDefaultConfig() *Config {
 
 	filters := NewDefaultFilters()
 	service := &Service{
-		Interval:     1000,
-		Threshold:    150,
+		Interval: 1000,
+		//Threshold:    150,
+		Threshold:    75,
 		Filters:      filters,
 		Pool:         pool,
 		Selection:    selection,
