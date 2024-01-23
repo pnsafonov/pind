@@ -150,6 +150,7 @@ func freeThreadCpus(state *PinState, thread *PinThread) {
 	l0 := len(thread.Cpus.Cpus)
 	for i := 0; i < l0; i++ {
 		cpu := thread.Cpus.Cpus[i]
+		//log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, used = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, state.Used)
 		delete(state.Used, cpu)
 	}
 	thread.Cpus.Zero()
@@ -176,10 +177,16 @@ func (x *PinProc) UpdateProc(proc *ProcInfo, state *PinState) {
 			// update actions implemented below
 			continue
 		}
+
 		needFree := isThreadCanBeFreed(thread, x)
 		if needFree {
 			// free cpu on thread end
 			freeThreadCpus(state, thread)
+
+			if thread.Selected == ThreadSelectionNo {
+				// after free not selected threads, reset cpus cores pattern
+				x.NotSelected.Zero()
+			}
 		}
 		// thread is finished
 		delete(x.Threads, pid)
@@ -207,7 +214,7 @@ func (x *PinProc) UpdateProc(proc *ProcInfo, state *PinState) {
 // only last deleting not selected thread must free cpu cores
 func isThreadCanBeFreed(thread *PinThread, pinProc *PinProc) bool {
 	if thread.Selected != ThreadSelectionNo {
-		return false
+		return true
 	}
 	// not selected thread must be checked
 	count := getThreadsCount0(pinProc.Threads, ThreadSelectionNo)
@@ -282,11 +289,16 @@ func (x *PinState) PinIdle() error {
 
 			equal := isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet)
 			if !equal {
-				err0 := unix.SchedSetaffinity(thread.ThreadInfo.Thread.PID, &state.Idle.CpuSet)
+				err0 := schedSetAffinity(thread.ThreadInfo.Stat, &state.Idle.CpuSet)
 				if err0 != nil {
 					err = err0
 				}
 			}
+		}
+
+		if procInfo.NotSelected.IsAnyInited() {
+			// is not used in idle
+			procInfo.NotSelected.Zero()
 		}
 	}
 
@@ -363,13 +375,29 @@ func (x *PinState) PinLoad(ctx *Context) error {
 				continue
 			}
 
-			err1 := unix.SchedSetaffinity(threadInfo.Thread.PID, &threadInfo.Cpus.CpuSet)
+			err1 := schedSetAffinity(threadInfo.ThreadInfo.Stat, &threadInfo.Cpus.CpuSet)
 			if err1 != nil {
 				err = err1
 			}
 		}
 	}
 
+	return err
+}
+
+func schedSetAffinity(procStat procfs.ProcStat, set *unix.CPUSet) error {
+	//count0 := set.Count()
+	//if count0 == 0 {
+	//	log.Debugf("schedSetAffinity catched empty")
+	//}
+
+	pid := procStat.PID
+	//cpus := MaskToArray(set)
+	//log.Debugf("schedSetaffinity pid = %d, comm = %s, cpus = %v", pid, procStat.Comm, cpus)
+	err := unix.SchedSetaffinity(pid, set)
+	//if err != nil {
+	//	log.Errorf("schedSetaffinity err = %v, pid = %d, comm = %s, cpus = %v", err, pid, procStat.Comm, cpus)
+	//}
 	return err
 }
 
@@ -402,6 +430,7 @@ func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
 
 		used[cpu] = procInfo
 		x.Cpus = append(x.Cpus, cpu)
+		//log.Debugf("PinCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
 		if len(x.Cpus) >= count {
 			x.CpuSet = numa.CpusToMask(x.Cpus)
 			return nil

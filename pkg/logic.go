@@ -40,12 +40,10 @@ func GetProcs0() error {
 
 			// sched_getaffinity
 			var cpuset unix.CPUSet
-			err1 = unix.SchedGetaffinity(threadStat.PID, &cpuset)
+			err1 = schedSetAffinity(threadStat, &cpuset)
 			if err1 != nil {
 				continue
 			}
-
-			//unix.SchedSetaffinity()
 		}
 
 	}
