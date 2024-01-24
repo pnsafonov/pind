@@ -62,19 +62,21 @@ func doSignals(ctx *Context) {
 	done := ctx.Done
 
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
 	go signalsLoop(sigChan, done)
 }
 
 func signalsLoop(sigChan chan os.Signal, done chan int) {
 	for {
 		sig := <-sigChan
-		log.Infof("received signal = %d", sig)
+		log.Infof("signalsLoop, received signal = %d", sig)
 		switch sig {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 			done <- 1
 			return
 		case syscall.SIGHUP:
+			// reload config
+			log.Infof("signalsLoop, SIGHUP received, reload conf (not implemented yet)")
 		default:
 			return
 		}
@@ -136,7 +138,6 @@ func handler(ctx *Context, time0 time.Time) error {
 		return err
 	}
 
-	//pinProcs(ctx, ctx.last)
 	ctx.state.UpdateProcs(ctx.last)
 
 	err = ctx.state.PinIdle()

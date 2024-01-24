@@ -10,11 +10,6 @@ import (
 )
 
 func main() {
-	//_ = pkg.GetProcs0()
-	//_ = pkg.PrintProcs0()
-	//pkg.DoTicker()
-	//doService()
-	//numa.PrintNuma0()
 	doMain(os.Args)
 }
 
@@ -149,7 +144,7 @@ func exit1(err error) {
 	if err == nil {
 		os.Exit(0)
 	}
-	log.Errorf("err = %v\n", err)
+	log.Errorf("err = %v", err)
 	os.Exit(1)
 }
 
