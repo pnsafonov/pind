@@ -19,8 +19,11 @@ func main() {
 }
 
 func doMain(args []string) {
-	configPath := pkg.DefConfPath
+	configPath := pkg.ConfPathBuiltIn
 	service0 := false
+	printConf0 := false
+
+	pkg.InitConsoleLogger()
 
 	l0 := len(args)
 	for i := 1; i < l0; i++ {
@@ -63,6 +66,11 @@ func doMain(args []string) {
 				service0 = true
 				continue
 			}
+		case "--print-conf":
+			{
+				printConf0 = true
+				continue
+			}
 		}
 
 	}
@@ -70,7 +78,11 @@ func doMain(args []string) {
 	ctx := pkg.NewContext()
 	ctx.Service = service0
 	ctx.ConfigPath = configPath
+	ctx.PrintConfig = printConf0
 
+	if printConf0 {
+		printConf(ctx)
+	}
 	if service0 {
 		runService(ctx)
 	}
@@ -90,7 +102,8 @@ pin programs to CPU (affinity)
   -v, --version              output version information and exit
 
       --print-procs "pattern0,pattern1"       print process filtered by ps aux | grep pattern0 | grep pattern1 
-      --print-numa                            print information about numa and exit`
+      --print-numa                            print information about numa and exit
+      --print-conf                            print config file content`
 
 	fmt.Println(helpMsg)
 	os.Exit(0)
@@ -142,5 +155,10 @@ func exit1(err error) {
 
 func runService(ctx *pkg.Context) {
 	err := pkg.RunService(ctx)
+	exit1(err)
+}
+
+func printConf(ctx *pkg.Context) {
+	err := pkg.PrintConf0(ctx)
 	exit1(err)
 }

@@ -34,8 +34,14 @@ func initLogger(configLog *config.Log) {
 		wr = io.MultiWriter(wr, os.Stderr)
 	}
 
+	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(wr)
 	log.SetLevel(configLog.Level)
 
 	return
+}
+
+func InitConsoleLogger() {
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetOutput(os.Stderr)
 }

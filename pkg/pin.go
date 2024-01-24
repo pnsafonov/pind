@@ -8,21 +8,17 @@ import (
 	"pind/pkg/numa"
 )
 
-type PinThreadState int
 type ThreadSelection int
 
 const (
-	PinThreadNone PinThreadState = 0
-	PinThreadIdle PinThreadState = 1
-	PinThreadLoad PinThreadState = 2
-
 	ThreadSelectionUnknown ThreadSelection = 0 // unknown
 	ThreadSelectionYes     ThreadSelection = 1 // selected
 	ThreadSelectionNo      ThreadSelection = 2 // not selected
 )
 
 var (
-	ErrNoFreeCores = fmt.Errorf("no_free_cores_left")
+	ErrNoFreeCores               = fmt.Errorf("no_free_cores_left")
+	ErrSchedSetAffinityEmptyMask = fmt.Errorf("sched_setaffinity_empty_mask")
 )
 
 type PinState struct {
@@ -43,7 +39,7 @@ type PinThread struct {
 	Thread     procfs.Proc // readonly
 	ThreadInfo *ThreadInfo // readonly, actual information
 
-	Cpus     PinCpus         // what we want
+	Cpus     PinCpus         // what we want for selected thread
 	Selected ThreadSelection // is thread selected
 }
 
@@ -251,27 +247,6 @@ func (x *PinThread) UpdateThread(thread *ThreadInfo) {
 	x.ThreadInfo = thread
 }
 
-//func (x *PinState) FreeIdleCores(ctx *Context) {
-//	state := x
-//	threshold := ctx.Config.Service.Threshold
-//
-//	for _, procInfo := range state.Procs {
-//		isLoad := procInfo.ProcInfo.cpu0 >= threshold
-//		if isLoad {
-//			continue
-//		}
-//
-//		for _, thread := range procInfo.Threads {
-//			inited := thread.Cpus.IsAnyInited()
-//			if !inited {
-//				continue
-//			}
-//
-//			freeThreadCpus(state, thread)
-//		}
-//	}
-//}
-
 func (x *PinState) PinIdle() error {
 	var err error
 	state := x
@@ -335,7 +310,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		if containsNotSelectedThread {
 			// we must init mask for not selected threads
 			if !procInfo.NotSelected.IsInited(algo.NotSelected) {
-				err0 := procInfo.NotSelected.PinCores(ctx, algo.NotSelected, procInfo)
+				err0 := procInfo.NotSelected.AssignCores(ctx, algo.NotSelected, procInfo)
 				if err0 != nil {
 					err = err0
 				}
@@ -353,7 +328,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			if threadInfo.Selected == ThreadSelectionYes {
 				if !threadInfo.Cpus.IsInited(algo.Selected) {
 					// use different cores for selected threads
-					err0 := threadInfo.Cpus.PinCores(ctx, algo.Selected, procInfo)
+					err0 := threadInfo.Cpus.AssignCores(ctx, algo.Selected, procInfo)
 					if err0 != nil {
 						err = err0
 					}
@@ -391,12 +366,14 @@ func (x *PinState) PinLoad(ctx *Context) error {
 }
 
 func schedSetAffinity(procStat procfs.ProcStat, set *unix.CPUSet) error {
+	pid := procStat.PID
+
 	count0 := set.Count()
 	if count0 == 0 {
-		log.Debugf("schedSetAffinity catched empty")
+		log.Errorf("schedSetAffinity, tries to set zero mask, pid = %d, comm = %s", pid, procStat.Comm)
+		return ErrSchedSetAffinityEmptyMask
 	}
 
-	pid := procStat.PID
 	//cpus := MaskToArray(set)
 	//log.Debugf("schedSetaffinity pid = %d, comm = %s, cpus = %v", pid, procStat.Comm, cpus)
 	err := unix.SchedSetaffinity(pid, set)
@@ -421,7 +398,7 @@ func (x *PinCpus) IsInited(count int) bool {
 	return l0 >= count
 }
 
-func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
+func (x *PinCpus) AssignCores(ctx *Context, count int, procInfo *PinProc) error {
 	err := ErrNoFreeCores
 	load := ctx.Config.Service.Pool.Load
 	used := ctx.state.Used
@@ -436,7 +413,7 @@ func (x *PinCpus) PinCores(ctx *Context, count int, procInfo *PinProc) error {
 
 		used[cpu] = procInfo
 		x.Cpus = append(x.Cpus, cpu)
-		//log.Debugf("PinCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
+		//log.Debugf("AssignCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
 		if len(x.Cpus) >= count {
 			err = nil
 			break

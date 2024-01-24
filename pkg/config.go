@@ -3,11 +3,11 @@ package pkg
 import (
 	log "github.com/sirupsen/logrus"
 	"pind/pkg/config"
-	"pind/pkg/utils/os_utils"
 )
 
 const (
-	DefConfPath = "/etc/pind/pind.conf"
+	ConfPathDef     = "/etc/pind/pind.conf"
+	ConfPathBuiltIn = "built-in"
 )
 
 func loadConfigAndInit(ctx *Context) error {
@@ -36,10 +36,9 @@ func loadConfigAndInit(ctx *Context) error {
 func loadConfigFile(ctx *Context) error {
 	confPath := ctx.ConfigPath
 
-	same, err := os_utils.SameFiles(confPath, DefConfPath)
-	if err == nil && same {
+	if confPath == ConfPathBuiltIn {
 		ctx.Config = config.NewDefaultConfig()
-		log.Debugf("use build-in config")
+		log.Infof("use build-in config")
 		return nil
 	}
 

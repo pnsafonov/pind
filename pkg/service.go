@@ -13,8 +13,9 @@ import (
 const userHZ = 100
 
 type Context struct {
-	ConfigPath string
-	Service    bool
+	ConfigPath  string
+	Service     bool
+	PrintConfig bool
 
 	Config *config.Config
 
@@ -29,13 +30,22 @@ type Context struct {
 func NewContext() *Context {
 	ctx := &Context{}
 	ctx.Done = make(chan int, 1)
-	ctx.ConfigPath = DefConfPath
+	ctx.ConfigPath = ConfPathDef
 	ctx.Service = false
+	ctx.PrintConfig = false
 	ctx.Config = config.NewDefaultConfig()
 	return ctx
 }
 
+func logContext(ctx *Context) {
+	log.Infof("ConfigPath  = %s", ctx.ConfigPath)
+	log.Infof("Service     = %v", ctx.Service)
+	log.Infof("PrintConfig = %v", ctx.PrintConfig)
+}
+
 func RunService(ctx *Context) error {
+	logContext(ctx)
+
 	err := loadConfigAndInit(ctx)
 	if err != nil {
 		log.Errorf("RunService, loadConfigAndInit err = %v", err)

@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"os"
 	"pind/pkg/config"
 )
 
@@ -23,7 +24,7 @@ func PrintProcs2() error {
 func PrintProcs0(filters []*config.ProcFilter) error {
 	procs, err := filterProcsInfo0(filters)
 	if err != nil {
-		log.Errorf("PrintProcs0 filterProcsInfo0 err = %v", err)
+		log.Errorf("PrintProcs0, filterProcsInfo0 err = %v", err)
 		return err
 	}
 
@@ -42,5 +43,24 @@ func PrintProcs0(filters []*config.ProcFilter) error {
 		fmt.Printf("\n")
 	}
 
+	return nil
+}
+
+func PrintConf0(ctx *Context) error {
+	logContext(ctx)
+
+	err := loadConfigFile(ctx)
+	if err != nil {
+		log.Errorf("PrintConf0, loadConfigFile, err = %v", err)
+		return err
+	}
+
+	str0, err := config.ToString0(ctx.Config)
+	if err != nil {
+		log.Errorf("PrintConf0, config.ToString0 = err = %v", err)
+		return err
+	}
+
+	_, _ = fmt.Fprintf(os.Stdout, "%s", str0)
 	return nil
 }

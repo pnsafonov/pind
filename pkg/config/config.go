@@ -2,8 +2,8 @@ package config
 
 import (
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 )
 
@@ -61,8 +61,8 @@ type Selection struct {
 
 type PinCoresAlgo struct {
 	Type        string `yaml:"type"`
-	Selected    int    `yaml:"selection_cores_count"`
-	NotSelected int    `yaml:"selection_cores_count"`
+	Selected    int    `yaml:"selected_cores_count"`
+	NotSelected int    `yaml:"not_selected_cores_count"`
 }
 
 func NewDefaultFilters() []*ProcFilter {
@@ -133,16 +133,25 @@ func NewDefaultConfig() *Config {
 func Load(confPath0 string) (*Config, error) {
 	bytes0, err := os.ReadFile(confPath0)
 	if err != nil {
-		log.Printf("config Load err = %v\n", err)
+		log.Errorf("confPath0, os.ReadFile err = %v\n", err)
 		return nil, err
 	}
 
 	config := NewDefaultConfig()
 	err = yaml.Unmarshal(bytes0, config)
 	if err != nil {
-		log.Printf("config yaml.Unmarshal err = %v\n", err)
+		log.Errorf("confPath0, yaml.Unmarshal err = %v\n", err)
 		return nil, err
 	}
 
 	return config, err
+}
+
+func ToString0(config *Config) (string, error) {
+	bytes0, err := yaml.Marshal(config)
+	if err != nil {
+		log.Errorf("ConfigToString, yaml.Marshal err = %v\n", err)
+		return "", err
+	}
+	return string(bytes0), nil
 }
