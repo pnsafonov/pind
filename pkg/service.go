@@ -92,10 +92,6 @@ func doLoop(ctx *Context) {
 			log.Infof("doLoop received done")
 			return
 		case t := <-ticker.C:
-			//log.Infof("Before sleep %v", t)
-			//time.Sleep(3 * time.Second)
-			//log.Infof("After Sleep  %v", t)
-
 			_ = handler(ctx, t)
 		}
 	}

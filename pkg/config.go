@@ -22,7 +22,7 @@ func loadConfigAndInit(ctx *Context) error {
 
 	pool, err := NewPool(config0.Service.Pool)
 	if err != nil {
-		log.Errorf("loadConfig, NewPool = err = %v", err)
+		log.Errorf("loadConfig, NewPool err = %v", err)
 		return err
 	}
 	ctx.pool = pool
@@ -44,7 +44,7 @@ func loadConfigFile(ctx *Context) error {
 
 	config0, err := config.Load(confPath)
 	if err != nil {
-		log.Errorf("loadConfigFile, config.Load = err = %v", err)
+		log.Errorf("loadConfigFile, config.Load err = %v", err)
 		return err
 	}
 
