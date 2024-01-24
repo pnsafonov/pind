@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ConfPathDef     = "/etc/pind/pind.conf"
+	ConfPathDef     = "/etc/pind/pind.yml"
 	ConfPathBuiltIn = "built-in"
 )
 
