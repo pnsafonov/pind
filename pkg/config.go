@@ -25,7 +25,7 @@ func loadConfigAndInit(ctx *Context) error {
 		log.Errorf("loadConfig, config.ToString0 err = %v", err)
 		return err
 	}
-	log.Infof("%s", str0)
+	log.Infof("\n%s", str0)
 
 	pool, err := NewPool(config0.Service.Pool)
 	if err != nil {

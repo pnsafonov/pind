@@ -1,0 +1,37 @@
+---
+log:
+    level: info
+    rotator_enabled: true
+    rotator:
+        file_name: /var/log/pind/pind.log
+        max_size: 10
+        max_backups: 5
+        max_age: 28
+        locale_time: true
+    stderr_enabled: true
+service:
+    interval: 1000
+#    threshold: 150
+    threshold: 75
+    filters:
+        - type: name
+          patterns:
+            # all patterns must be selected
+            - /usr/bin/qemu-system-x86_64
+    pool:
+        idle: 0-1
+#        load: 2-5
+        load: 2-6
+
+    selection:
+        type: single
+        patterns:
+            # all patterns must be selected
+            - CPU
+            - /KVM
+    pin_cores_algo:
+        type: single
+        # 1 core per thread selected by selection patterns
+        selected_cores_count: 1
+        # 2 thread for all threads not selected by selection patterns
+        not_selected_cores_count: 2
