@@ -8,6 +8,12 @@ import (
 	"pind/pkg/config"
 )
 
+var (
+	LogTextFormatter = &log.TextFormatter{
+		DisableQuote: true, // don't print \n char, print linebreak
+	}
+)
+
 func initLogger(configLog *config.Log) {
 	wr := io.MultiWriter()
 	count := 0
@@ -34,7 +40,7 @@ func initLogger(configLog *config.Log) {
 		wr = io.MultiWriter(wr, os.Stderr)
 	}
 
-	log.SetFormatter(&log.TextFormatter{})
+	log.SetFormatter(LogTextFormatter)
 	log.SetOutput(wr)
 	log.SetLevel(configLog.Level)
 
@@ -42,6 +48,6 @@ func initLogger(configLog *config.Log) {
 }
 
 func InitConsoleLogger() {
-	log.SetFormatter(&log.TextFormatter{})
+	log.SetFormatter(LogTextFormatter)
 	log.SetOutput(os.Stderr)
 }

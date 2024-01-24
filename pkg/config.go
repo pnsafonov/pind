@@ -13,12 +13,19 @@ const (
 func loadConfigAndInit(ctx *Context) error {
 	err := loadConfigFile(ctx)
 	if err != nil {
-		log.Errorf("loadConfig, loadConfigFile = err = %v", err)
+		log.Errorf("loadConfig, loadConfigFile err = %v", err)
 		return err
 	}
 
 	config0 := ctx.Config
 	initLogger(config0.Log)
+
+	str0, err := config.ToString0(config0)
+	if err != nil {
+		log.Errorf("loadConfig, config.ToString0 err = %v", err)
+		return err
+	}
+	log.Infof("%s", str0)
 
 	pool, err := NewPool(config0.Service.Pool)
 	if err != nil {
