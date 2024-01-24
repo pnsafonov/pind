@@ -85,11 +85,12 @@ func doLoop(ctx *Context) {
 	interval := time.Duration(ctx.Config.Service.Interval)
 	done := ctx.Done
 
+	log.Info("doLoop, begin jobs")
 	ticker := time.NewTicker(interval * time.Millisecond)
 	for {
 		select {
 		case <-done:
-			log.Infof("doLoop received done")
+			log.Infof("doLoop received done, end jobs")
 			return
 		case t := <-ticker.C:
 			_ = handler(ctx, t)

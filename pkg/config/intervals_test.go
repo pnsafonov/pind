@@ -16,6 +16,7 @@ func TestInervals0(t *testing.T) {
 		{" 1 , 5 - 8 , 19 - 20 ", Intervals{Values: []int{1, 5, 6, 7, 8, 19, 20}}},
 		{"9,8, 5,  3,   1", Intervals{Values: []int{1, 3, 5, 8, 9}}},
 		{"5-8,   1-2,     115-     119", Intervals{Values: []int{1, 2, 5, 6, 7, 8, 115, 116, 117, 118, 119}}},
+		{"19,   12   ,     11     ,   7, 5  ", Intervals{Values: []int{5, 7, 11, 12, 19}}},
 	}
 
 	l0 := len(cases)

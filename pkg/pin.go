@@ -146,12 +146,10 @@ func freeThreadCpus(state *PinState, thread *PinThread) {
 	l0 := len(thread.Cpus.Cpus)
 	for i := 0; i < l0; i++ {
 		cpu := thread.Cpus.Cpus[i]
-		//log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, used = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, state.Used)
+		log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, used = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, state.Used)
 		delete(state.Used, cpu)
 	}
 	thread.Cpus.Zero()
-	//thread.Cpus.Cpus = thread.Cpus.Cpus[:0]
-	//ZeroMask(thread.Cpus.CpuSet)
 }
 
 func getThreadByPID(threads []*ThreadInfo, pid int) (*ThreadInfo, bool) {
@@ -367,6 +365,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 
 func schedSetAffinity(procStat procfs.ProcStat, set *unix.CPUSet) error {
 	pid := procStat.PID
+	var cpus []int
 
 	count0 := set.Count()
 	if count0 == 0 {
@@ -374,12 +373,19 @@ func schedSetAffinity(procStat procfs.ProcStat, set *unix.CPUSet) error {
 		return ErrSchedSetAffinityEmptyMask
 	}
 
-	//cpus := MaskToArray(set)
-	//log.Debugf("schedSetaffinity pid = %d, comm = %s, cpus = %v", pid, procStat.Comm, cpus)
+	isDebugEnabled := log.IsLevelEnabled(log.DebugLevel)
+	isErrorEnabled := log.IsLevelEnabled(log.ErrorLevel)
+	if isDebugEnabled || isErrorEnabled {
+		cpus = MaskToArray(set)
+	}
+
+	if isDebugEnabled {
+		log.Debugf("schedSetaffinity pid = %d, comm = %s, cpus = %v", pid, procStat.Comm, cpus)
+	}
 	err := unix.SchedSetaffinity(pid, set)
-	//if err != nil {
-	//	log.Errorf("schedSetaffinity err = %v, pid = %d, comm = %s, cpus = %v", err, pid, procStat.Comm, cpus)
-	//}
+	if err != nil && isErrorEnabled {
+		log.Errorf("schedSetaffinity err = %v, pid = %d, comm = %s, cpus = %v", err, pid, procStat.Comm, cpus)
+	}
 	return err
 }
 
@@ -413,7 +419,7 @@ func (x *PinCpus) AssignCores(ctx *Context, count int, procInfo *PinProc) error 
 
 		used[cpu] = procInfo
 		x.Cpus = append(x.Cpus, cpu)
-		//log.Debugf("AssignCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
+		log.Debugf("AssignCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
 		if len(x.Cpus) >= count {
 			err = nil
 			break
