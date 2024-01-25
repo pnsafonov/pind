@@ -22,7 +22,7 @@ func PrintProcs2() error {
 }
 
 func PrintProcs0(filters []*config.ProcFilter) error {
-	procs, err := filterProcsInfo0(filters)
+	procs, err := filterProcsInfo0(filters, nil)
 	if err != nil {
 		log.Errorf("PrintProcs0, filterProcsInfo0 err = %v", err)
 		return err

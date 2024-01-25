@@ -39,6 +39,7 @@ service:
         type: name
         patterns:
             - iou-wrk-
+            - "SPICE Worker"
 
     pin_cores_algo:
         type: single

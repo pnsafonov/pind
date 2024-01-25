@@ -161,8 +161,9 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 	filters0 := ctx.Config.Service.Filters0
 	filters1 := ctx.Config.Service.Filters1
 	threshold := ctx.Config.Service.Threshold
+	ignore := ctx.Config.Service.Ignore
 
-	procsAll, err := filterProcsInfo0(filters0)
+	procsAll, err := filterProcsInfo0(filters0, ignore)
 	if err != nil {
 		log.Errorf("calcCPU, filterProcsInfo0 err = %v", err)
 		return err
