@@ -97,7 +97,7 @@ func doLoop(ctx *Context) {
 			log.Infof("doLoop received done, end jobs")
 			return
 		case t := <-ticker.C:
-			_ = handler(ctx, t)
+			handler(ctx, t)
 		}
 	}
 }
@@ -133,34 +133,28 @@ func printProcs1(procs []*ProcInfo, time0 time.Time, timeDelta float64) {
 	}
 }
 
-func handler(ctx *Context, time0 time.Time) error {
-	err := calcCPU(ctx, time0)
-	if err != nil {
-		log.Errorf("handler, calcCPU err = %v", err)
-		return err
+func handler(ctx *Context, time0 time.Time) {
+	err0 := calcCPU(ctx, time0)
+	if err0 != nil {
+		log.Errorf("handler, calcCPU err = %v", err0)
 	}
 
 	ctx.state.UpdateProcs(ctx.lastInFilter)
 
-	err = pinNotInFilterToIdle(ctx)
-	if err != nil {
-		log.Errorf("handler, pinNotInFilterToIdle err = %v", err)
-		return err
+	err1 := pinNotInFilterToIdle(ctx)
+	if err1 != nil {
+		log.Errorf("handler, pinNotInFilterToIdle err = %v", err1)
 	}
 
-	err = ctx.state.PinIdle()
-	if err != nil {
-		log.Errorf("handler, ctx.state.PinLoad err = %v", err)
-		return err
+	err2 := ctx.state.PinIdle()
+	if err2 != nil {
+		log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
 	}
 
-	err = ctx.state.PinLoad(ctx)
-	if err != nil {
-		log.Errorf("handler, ctx.state.PinLoad err = %v", err)
-		return err
+	err3 := ctx.state.PinLoad(ctx)
+	if err3 != nil {
+		log.Errorf("handler, ctx.state.PinLoad err = %v", err3)
 	}
-
-	return nil
 }
 
 func calcCPU(ctx *Context, time0 time.Time) error {
