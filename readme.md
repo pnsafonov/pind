@@ -29,3 +29,10 @@ systemctl start pind
 systemctl enable pind
 
 ```
+
+## Test
+To run go tests:
+```
+cd pind
+go test ./...
+```

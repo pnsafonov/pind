@@ -45,4 +45,14 @@ func TestLog2(t *testing.T) {
 		t.FailNow()
 	}
 
+	if !reflect.DeepEqual(config.Service.Filters0[0].Patterns, []string{"/usr/bin/kvm"}) {
+		t.FailNow()
+	}
+	if !reflect.DeepEqual(config.Service.Filters1[0].Patterns, []string{"qemu", "deb11-1"}) {
+		t.FailNow()
+	}
+	if !reflect.DeepEqual(config.Service.Filters1[1].Patterns, []string{"qemu", "deb11-2"}) {
+		t.FailNow()
+	}
+
 }

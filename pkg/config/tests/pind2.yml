@@ -4,7 +4,11 @@ log:
   level: warning
 service:
   interval: 1001
-  filters:
+  filters0:
+    - type: name
+      patterns:
+        - /usr/bin/kvm
+  filters1:
     - type: name
       patterns:
         - qemu
