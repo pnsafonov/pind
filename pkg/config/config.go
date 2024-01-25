@@ -38,7 +38,8 @@ type Rotator struct {
 type Service struct {
 	Interval     int           `yaml:"interval"` // ms
 	Threshold    float64       `yaml:"threshold"`
-	Filters      []*ProcFilter `yaml:"filters"`
+	Filters0     []*ProcFilter `yaml:"filters0"`
+	Filters1     []*ProcFilter `yaml:"filters1"`
 	Pool         Pool          `yaml:"pool"`
 	Selection    Selection     `yaml:"selection"`
 	PinCoresAlgo *PinCoresAlgo `yaml:"pin_cores_algo"`
@@ -65,7 +66,7 @@ type PinCoresAlgo struct {
 	NotSelected int    `yaml:"not_selected_cores_count"`
 }
 
-func NewDefaultFilters() []*ProcFilter {
+func NewDefaultFilters0() []*ProcFilter {
 	filter0 := &ProcFilter{
 		Type:     ProcFilterTypeName,
 		Patterns: []string{"/usr/bin/kvm"},
@@ -73,6 +74,19 @@ func NewDefaultFilters() []*ProcFilter {
 	filter1 := &ProcFilter{
 		Type:     ProcFilterTypeName,
 		Patterns: []string{"/usr/bin/qemu-system-x86_64"},
+	}
+	filters := []*ProcFilter{filter0, filter1}
+	return filters
+}
+
+func NewDefaultFilters1() []*ProcFilter {
+	filter0 := &ProcFilter{
+		Type:     ProcFilterTypeName,
+		Patterns: []string{"deb-2"},
+	}
+	filter1 := &ProcFilter{
+		Type:     ProcFilterTypeName,
+		Patterns: []string{"deb-3"},
 	}
 	filters := []*ProcFilter{filter0, filter1}
 	return filters
@@ -114,12 +128,13 @@ func NewDefaultConfig() *Config {
 		NotSelected: 2, // 2 cores for other threads
 	}
 
-	filters := NewDefaultFilters()
+	filters0 := NewDefaultFilters0()
+	filters1 := NewDefaultFilters1()
 	service := &Service{
-		Interval:  1000,
-		Threshold: 150,
-		//Threshold:    75,
-		Filters:      filters,
+		Interval:     1000,
+		Threshold:    150,
+		Filters0:     filters0,
+		Filters1:     filters1,
 		Pool:         pool,
 		Selection:    selection,
 		PinCoresAlgo: pinCoresAlgo,

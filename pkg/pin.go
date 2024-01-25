@@ -429,3 +429,28 @@ func (x *PinCpus) AssignCores(ctx *Context, count int, procInfo *PinProc) error 
 	x.CpuSet = numa.CpusToMask(x.Cpus)
 	return err
 }
+
+func pinNotInFilterToIdle(ctx *Context) error {
+	var err error
+	state := ctx.state
+
+	l0 := len(ctx.lastNotInFilter)
+	for i := 0; i < l0; i++ {
+		proc := ctx.lastNotInFilter[i]
+
+		l1 := len(proc.Threads)
+		for j := 0; j < l1; j++ {
+			thread := proc.Threads[j]
+
+			if isMasksEqual(state.Idle.CpuSet, thread.CpuSet) {
+				continue
+			}
+
+			err0 := schedSetAffinity(thread.Stat, &state.Idle.CpuSet)
+			if err0 != nil {
+				err = err0
+			}
+		}
+	}
+	return err
+}

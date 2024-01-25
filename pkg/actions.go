@@ -17,7 +17,7 @@ func PrintProcs1(patterns []string) error {
 }
 
 func PrintProcs2() error {
-	filters := config.NewDefaultFilters()
+	filters := config.NewDefaultFilters0()
 	return PrintProcs0(filters)
 }
 

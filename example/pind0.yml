@@ -12,11 +12,20 @@ log:
 service:
     interval: 1000
     threshold: 150
-    filters:
+    filters0:
         - type: name
           patterns:
             # all patterns must be selected
             - /usr/bin/qemu-system-x86_64
+    filters1:
+        - type: name
+          patterns:
+              # all patterns must be selected
+              - deb-2
+        - type: name
+          patterns:
+              # all patterns must be selected
+              - deb-3
     pool:
         idle: 0-1
         load: 2-5

@@ -21,8 +21,10 @@ type Context struct {
 
 	Done chan int
 
-	pool *Pool
-	last []*ProcInfo
+	pool            *Pool
+	lastAll         []*ProcInfo
+	lastInFilter    []*ProcInfo
+	lastNotInFilter []*ProcInfo
 
 	state PinState
 }
@@ -138,7 +140,13 @@ func handler(ctx *Context, time0 time.Time) error {
 		return err
 	}
 
-	ctx.state.UpdateProcs(ctx.last)
+	ctx.state.UpdateProcs(ctx.lastInFilter)
+
+	err = pinNotInFilterToIdle(ctx)
+	if err != nil {
+		log.Errorf("handler, pinNotInFilterToIdle err = %v", err)
+		return err
+	}
 
 	err = ctx.state.PinIdle()
 	if err != nil {
@@ -156,36 +164,46 @@ func handler(ctx *Context, time0 time.Time) error {
 }
 
 func calcCPU(ctx *Context, time0 time.Time) error {
-	filters := ctx.Config.Service.Filters
+	filters0 := ctx.Config.Service.Filters0
+	filters1 := ctx.Config.Service.Filters1
 	threshold := ctx.Config.Service.Threshold
 
-	procs1, err := filterProcsInfo0(filters)
+	procsAll, err := filterProcsInfo0(filters0)
 	if err != nil {
 		log.Errorf("calcCPU, filterProcsInfo0 err = %v", err)
 		return err
 	}
-	setTime(procs1, time0)
-	//printProcs0(procs1, time0)
+	setTime(procsAll, time0)
+	//printProcs0(procsAll, time0)
 
-	procs0 := ctx.last
-	l0 := len(ctx.last)
+	prevLastAll := ctx.lastAll
+	l0 := len(prevLastAll)
 	if l0 == 0 {
 		// first run, nothing to do
-		ctx.last = procs1
+		inFilter, notInFilter := filterProcInfo(procsAll, filters1)
+		ctx.lastAll = procsAll
+		ctx.lastInFilter = inFilter
+		ctx.lastNotInFilter = notInFilter
 		return nil
 	}
 
-	l1 := len(procs1)
+	l1 := len(procsAll)
 	if l1 == 0 {
+		ctx.lastAll = nil
+		ctx.lastInFilter = nil
+		ctx.lastNotInFilter = nil
 		return nil
 	}
 
-	timeDelta := calcTimeDelta(procs0, procs1)
+	timeDelta := calcTimeDelta(prevLastAll, procsAll)
 
-	for i := 0; i < l1; i++ {
-		proc1 := procs1[i]
+	// second filtration
+	inFilter, notInFilter := filterProcInfo(procsAll, filters1)
+	l2 := len(inFilter)
+	for i := 0; i < l2; i++ {
+		proc1 := inFilter[i]
 		// proc0
-		proc0, ok := getSameProc(procs0, proc1)
+		proc0, ok := getSameProc(prevLastAll, proc1)
 		if !ok {
 			continue
 		}
@@ -194,8 +212,10 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 		proc1.cpu0 = cpu0
 		proc1.load = cpu0 > threshold
 	}
-	ctx.last = procs1
-	//printProcs1(procs1, time0, timeDelta)
+	ctx.lastAll = procsAll
+	ctx.lastInFilter = inFilter
+	ctx.lastNotInFilter = notInFilter
+	//printProcs1(procsAll, time0, timeDelta)
 
 	return nil
 }

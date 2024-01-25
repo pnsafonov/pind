@@ -184,3 +184,23 @@ func getThreadSelection(thead *ThreadInfo, patterns []string) ThreadSelection {
 	}
 	return ThreadSelectionNo
 }
+
+// filterProcInfo - returns (inFilter, notInFilter)
+func filterProcInfo(procs []*ProcInfo, filters []*config.ProcFilter) ([]*ProcInfo, []*ProcInfo) {
+	l0 := len(procs)
+
+	inFilter := make([]*ProcInfo, 0, l0)
+	notInFilter := make([]*ProcInfo, 0, l0)
+
+	for i := 0; i < l0; i++ {
+		proc := procs[i]
+
+		if filterProc(filters, proc.Stat.Comm, proc.Cmd) {
+			inFilter = append(inFilter, proc)
+		} else {
+			notInFilter = append(notInFilter, proc)
+		}
+	}
+
+	return inFilter, notInFilter
+}
