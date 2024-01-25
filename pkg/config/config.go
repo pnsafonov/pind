@@ -11,6 +11,7 @@ const (
 	ProcFilterTypeName     = "name"
 	SelectionTypeSingle    = "single" // core per thread
 	PinCoresAlgoTypeSingle = "single"
+	IgnoreTypeName         = "name"
 )
 
 type Config struct {
@@ -43,6 +44,7 @@ type Service struct {
 	Pool         Pool          `yaml:"pool"`
 	Selection    Selection     `yaml:"selection"`
 	PinCoresAlgo *PinCoresAlgo `yaml:"pin_cores_algo"`
+	Ignore       *Ignore       `yaml:"ignore"`
 }
 
 type Pool struct {
@@ -56,6 +58,11 @@ type ProcFilter struct {
 }
 
 type Selection struct {
+	Type     string   `yaml:"type"`
+	Patterns []string `yaml:"patterns"`
+}
+
+type Ignore struct {
 	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
 }
@@ -128,6 +135,11 @@ func NewDefaultConfig() *Config {
 		NotSelected: 2, // 2 cores for other threads
 	}
 
+	ignore := &Ignore{
+		Type:     IgnoreTypeName,
+		Patterns: []string{"iou-wrk-"},
+	}
+
 	filters0 := NewDefaultFilters0()
 	filters1 := NewDefaultFilters1()
 	service := &Service{
@@ -138,6 +150,7 @@ func NewDefaultConfig() *Config {
 		Pool:         pool,
 		Selection:    selection,
 		PinCoresAlgo: pinCoresAlgo,
+		Ignore:       ignore,
 	}
 
 	config.Log = log0

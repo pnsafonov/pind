@@ -229,6 +229,9 @@ func getThreadsCount0(threads map[int]*PinThread, selection ThreadSelection) int
 func (x *PinProc) ContainsThread(selection ThreadSelection) bool {
 	procInfo := x
 	for _, threadInfo := range procInfo.Threads {
+		if threadInfo.ThreadInfo.Ignored {
+			continue
+		}
 		if threadInfo.Selected == selection {
 			return true
 		}
@@ -257,6 +260,10 @@ func (x *PinState) PinIdle() error {
 		for _, thread := range procInfo.Threads {
 			if thread.Cpus.IsAnyInited() {
 				freeThreadCpus(state, thread)
+			}
+
+			if thread.ThreadInfo.Ignored {
+				continue
 			}
 
 			if isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet) {
@@ -290,6 +297,9 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			continue
 		}
 		for _, threadInfo := range procInfo.Threads {
+			if threadInfo.ThreadInfo.Ignored {
+				continue
+			}
 			if threadInfo.Selected == ThreadSelectionYes || threadInfo.Selected == ThreadSelectionNo {
 				continue
 			}
@@ -316,6 +326,9 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		}
 
 		for _, threadInfo := range procInfo.Threads {
+			if threadInfo.ThreadInfo.Ignored {
+				continue
+			}
 			if threadInfo.Selected == ThreadSelectionNo {
 				if !threadInfo.Cpus.IsInited(algo.NotSelected) {
 					// use same mask for not selected threads
@@ -343,6 +356,10 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			continue
 		}
 		for _, threadInfo := range procInfo.Threads {
+			if threadInfo.ThreadInfo.Ignored {
+				continue
+			}
+
 			if !threadInfo.Cpus.IsAnyInited() {
 				// no free cpu's cores left
 				continue
@@ -441,6 +458,10 @@ func pinNotInFilterToIdle(ctx *Context) error {
 		l1 := len(proc.Threads)
 		for j := 0; j < l1; j++ {
 			thread := proc.Threads[j]
+
+			if thread.Ignored {
+				continue
+			}
 
 			if isMasksEqual(state.Idle.CpuSet, thread.CpuSet) {
 				continue

@@ -24,12 +24,13 @@ type ProcInfo struct {
 // ThreadInfo - current (actual) information about thread
 // filled once, and not modified
 type ThreadInfo struct {
-	Thread procfs.Proc
-	Stat   procfs.ProcStat
-	CpuSet unix.CPUSet
+	Thread  procfs.Proc
+	Stat    procfs.ProcStat
+	CpuSet  unix.CPUSet
+	Ignored bool // ignore thread: can't sched_getaffinity with any cpu
 }
 
-func filterProcsInfo0(filters []*config.ProcFilter) ([]*ProcInfo, error) {
+func filterProcsInfo0(filters []*config.ProcFilter, ignore *config.Ignore) ([]*ProcInfo, error) {
 	procs, err := procfs.AllProcs()
 	if err != nil {
 		log.Errorf("filterProcsInfo0 procfs.AllProcs err = %v", err)
@@ -73,9 +74,12 @@ func filterProcsInfo0(filters []*config.ProcFilter) ([]*ProcInfo, error) {
 				continue
 			}
 
+			ignored := isIgnored(threadStat.Comm, ignore)
+
 			threadInfo := &ThreadInfo{
-				Thread: thread,
-				Stat:   threadStat,
+				Thread:  thread,
+				Stat:    threadStat,
+				Ignored: ignored,
 			}
 			// sched_getaffinity
 			err1 = unix.SchedGetaffinity(threadStat.PID, &threadInfo.CpuSet)
@@ -203,4 +207,19 @@ func filterProcInfo(procs []*ProcInfo, filters []*config.ProcFilter) ([]*ProcInf
 	}
 
 	return inFilter, notInFilter
+}
+
+// isIgnored - is thread ignored, contains any of ignore pattern
+func isIgnored(comm string, ignore *config.Ignore) bool {
+	if ignore == nil {
+		return false
+	}
+	l0 := len(ignore.Patterns)
+	for i := 0; i < l0; i++ {
+		pattern := ignore.Patterns[i]
+		if strings.Contains(comm, pattern) {
+			return true
+		}
+	}
+	return false
 }

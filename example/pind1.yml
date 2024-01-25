@@ -38,6 +38,12 @@ service:
             # all patterns must be selected
             - CPU
             - /KVM
+
+    ignore:
+        type: name
+        patterns:
+            - iou-wrk-
+
     pin_cores_algo:
         type: single
         # 1 core per thread selected by selection patterns
