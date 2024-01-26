@@ -51,3 +51,7 @@ service:
         selected_cores_count: 1
         # 2 thread for all threads not selected by selection patterns
         not_selected_cores_count: 2
+
+    http_api:
+        enabled: true
+        listen: "0.0.0.0:10331"

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"pind/pkg/config"
+	"pind/pkg/http_api"
 	"syscall"
 	"time"
 )
@@ -27,6 +28,8 @@ type Context struct {
 	lastNotInFilter []*ProcInfo
 
 	state PinState
+
+	HttpApi *http_api.HttpApi
 }
 
 func NewContext() *Context {
@@ -54,8 +57,28 @@ func RunService(ctx *Context) error {
 		return err
 	}
 
+	err = doHttpApi(ctx)
+	if err != nil {
+		log.Errorf("RunService, doHttpApi err = %v", err)
+		return err
+	}
+
 	doSignals(ctx)
 	doLoop(ctx)
+
+	return nil
+}
+
+func doHttpApi(ctx *Context) error {
+	if !ctx.HttpApi.Config.Enabled {
+		return nil
+	}
+
+	err := ctx.HttpApi.GoServe()
+	if err != nil {
+		log.Errorf("doHttpApi, ctx.HttpApi.GoServe err = %v", err)
+		return err
+	}
 
 	return nil
 }
@@ -154,6 +177,11 @@ func handler(ctx *Context, time0 time.Time) {
 	err3 := ctx.state.PinLoad(ctx)
 	if err3 != nil {
 		log.Errorf("handler, ctx.state.PinLoad err = %v", err3)
+	}
+
+	err4 := setHttpApiData(ctx)
+	if err4 != nil {
+		log.Errorf("handler, setHttpApiData err = %v", err4)
 	}
 }
 

@@ -45,6 +45,7 @@ type Service struct {
 	Selection    Selection     `yaml:"selection"`
 	PinCoresAlgo *PinCoresAlgo `yaml:"pin_cores_algo"`
 	Ignore       *Ignore       `yaml:"ignore"`
+	HttpApi      *HttpApi      `yaml:"http_api"`
 }
 
 type Pool struct {
@@ -71,6 +72,11 @@ type PinCoresAlgo struct {
 	Type        string `yaml:"type"`
 	Selected    int    `yaml:"selected_cores_count"`
 	NotSelected int    `yaml:"not_selected_cores_count"`
+}
+
+type HttpApi struct {
+	Enabled bool   `yaml:"enabled"`
+	Listen  string `yaml:"listen"`
 }
 
 func NewDefaultFilters0() []*ProcFilter {
@@ -140,6 +146,11 @@ func NewDefaultConfig() *Config {
 		Patterns: []string{"iou-wrk-"},
 	}
 
+	httpApi := &HttpApi{
+		Enabled: true,
+		Listen:  "0.0.0.0:10331",
+	}
+
 	filters0 := NewDefaultFilters0()
 	filters1 := NewDefaultFilters1()
 	service := &Service{
@@ -151,6 +162,7 @@ func NewDefaultConfig() *Config {
 		Selection:    selection,
 		PinCoresAlgo: pinCoresAlgo,
 		Ignore:       ignore,
+		HttpApi:      httpApi,
 	}
 
 	config.Log = log0

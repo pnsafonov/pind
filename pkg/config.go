@@ -3,6 +3,7 @@ package pkg
 import (
 	log "github.com/sirupsen/logrus"
 	"pind/pkg/config"
+	"pind/pkg/http_api"
 )
 
 const (
@@ -36,6 +37,8 @@ func loadConfigAndInit(ctx *Context) error {
 
 	ctx.state = NewPinState()
 	ctx.state.Idle = NewIdlePinCpu(ctx)
+
+	ctx.HttpApi = http_api.NewHttpApi(config0.Service.HttpApi)
 
 	return nil
 }
