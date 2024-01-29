@@ -3,6 +3,7 @@ package numa
 import (
 	"fmt"
 	"github.com/lrita/numa"
+	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
@@ -12,6 +13,7 @@ var (
 	nodeMaxId  = -1
 	nodesCount = 0
 	nodes      []*NodeInfo
+	procfs0    procfs.FS
 )
 
 func init() {
@@ -39,6 +41,13 @@ func init() {
 		ni.Index = i
 		nodes = append(nodes, ni)
 	}
+
+	procfs1, err1 := procfs.NewDefaultFS()
+	if err1 != nil {
+		initError = err1
+		return
+	}
+	procfs0 = procfs1
 }
 
 type NodeInfo struct {

@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"pind/pkg/config"
 	"pind/pkg/http_api"
+	"pind/pkg/numa"
 	"syscall"
 	"time"
 )
@@ -28,6 +29,8 @@ type Context struct {
 	lastNotInFilter []*ProcInfo
 
 	state PinState
+
+	lastCpuInfo *numa.Info
 
 	HttpApi *http_api.HttpApi
 }
@@ -157,9 +160,14 @@ func printProcs1(procs []*ProcInfo, time0 time.Time, timeDelta float64) {
 }
 
 func handler(ctx *Context, time0 time.Time) {
-	err0 := calcCPU(ctx, time0)
+	err0 := calcProcsCPU(ctx, time0)
 	if err0 != nil {
-		log.Errorf("handler, calcCPU err = %v", err0)
+		log.Errorf("handler, calcProcsCPU err = %v", err0)
+	}
+
+	err5 := calcCoresCPU(ctx)
+	if err5 != nil {
+		log.Errorf("handler, calcCoresCPU err = %v", err0)
 	}
 
 	ctx.state.UpdateProcs(ctx.lastInFilter)
@@ -185,7 +193,7 @@ func handler(ctx *Context, time0 time.Time) {
 	}
 }
 
-func calcCPU(ctx *Context, time0 time.Time) error {
+func calcProcsCPU(ctx *Context, time0 time.Time) error {
 	filters0 := ctx.Config.Service.Filters0
 	filters1 := ctx.Config.Service.Filters1
 	threshold := ctx.Config.Service.Threshold
@@ -193,7 +201,7 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 
 	procsAll, err := filterProcsInfo0(filters0, ignore)
 	if err != nil {
-		log.Errorf("calcCPU, filterProcsInfo0 err = %v", err)
+		log.Errorf("calcProcsCPU, filterProcsInfo0 err = %v", err)
 		return err
 	}
 	setTime(procsAll, time0)
@@ -231,7 +239,7 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 			continue
 		}
 
-		cpu0 := calcCpuLoad0(proc0, proc1, timeDelta)
+		cpu0 := calcProcCpuLoad0(proc0, proc1, timeDelta)
 		proc1.cpu0 = cpu0
 		proc1.load = cpu0 > threshold
 	}
@@ -243,7 +251,46 @@ func calcCPU(ctx *Context, time0 time.Time) error {
 	return nil
 }
 
-func calcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
+func calcCoresCPU(ctx *Context) error {
+	cpuInfos, err := numa.GetCpuInfos()
+	if err != nil {
+		log.Errorf("calcCoresCPU, numa.GetCpuInfos err = %v", err)
+		return err
+	}
+
+	prevCpuInfos := ctx.lastCpuInfo
+	if prevCpuInfos == nil {
+		ctx.lastCpuInfo = cpuInfos
+		return nil
+	}
+
+	l0 := len(prevCpuInfos.Nodes)
+	l1 := len(cpuInfos.Nodes)
+	if l0 != l1 {
+		log.Warningf("calcCoresCPU, different numa nodes count prev = %d, cur = %d", l0, l1)
+	}
+
+	for i := 0; i < l0 && i < l1; i++ {
+		node := cpuInfos.Infos[i]
+		prevNode := prevCpuInfos.Infos[i]
+
+		for cpu, cpuInfo := range node.Cores {
+			prevCpuInfo, ok := prevNode.Cores[cpu]
+			if !ok {
+				log.Warningf("calcCoresCPU, can't find prevCpuInfo with cpu = %d", cpu)
+				continue
+			}
+
+			cpuLoad := calcCoreCpuLoad0(prevCpuInfo, cpuInfo)
+			cpuInfo.CpuLoad = cpuLoad
+		}
+	}
+
+	ctx.lastCpuInfo = cpuInfos
+	return nil
+}
+
+func calcProcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
 	if prev == nil || cur == nil || timeDelta <= 0 {
 		return 0
 	}
@@ -256,4 +303,23 @@ func calcCpuLoad0(prev *ProcInfo, cur *ProcInfo, timeDelta float64) float64 {
 	cpu1 := cpu0 * 100
 
 	return cpu1
+}
+
+func calcCoreCpuLoad0(prev *numa.CpuInfo, cur *numa.CpuInfo) float64 {
+	if prev == nil || cur == nil {
+		return 0
+	}
+
+	curSum := cur.GetSumm()
+	prevSum := prev.GetSumm()
+	delta := curSum - prevSum
+
+	curSum0 := cur.GetSumm0()
+	prevSum0 := prev.GetSumm0()
+	delta0 := curSum0 - prevSum0
+
+	load := delta0 / delta
+	load *= 100
+
+	return load
 }

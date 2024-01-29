@@ -3,6 +3,8 @@ package pkg
 import (
 	"fmt"
 	"pind/pkg/http_api"
+	"pind/pkg/utils/math_utils"
+	"sort"
 )
 
 func setHttpApiData(ctx *Context) error {
@@ -11,6 +13,7 @@ func setHttpApiData(ctx *Context) error {
 }
 
 func fillHttpApiState(ctx *Context) *http_api.State {
+	cpuInfo := ctx.lastCpuInfo
 	state := &http_api.State{}
 
 	for cpu, _ := range ctx.state.Used {
@@ -29,10 +32,11 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 
 	procs := make(map[string]*http_api.Proc)
 	for _, procInfo0 := range ctx.lastAll {
+		cpu0 := math_utils.Round2(procInfo0.cpu0)
 		proc := &http_api.Proc{
 			PID:  procInfo0.Stat.PID,
 			Comm: procInfo0.Stat.Comm,
-			CPU:  procInfo0.cpu0,
+			CPU:  cpu0,
 			Load: procInfo0.load,
 		}
 
@@ -47,8 +51,33 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 
 		procs[procKey] = proc
 	}
-
 	state.Procs = procs
+
+	l0 := len(cpuInfo.Infos)
+	for i := 0; i < l0; i++ {
+		node := cpuInfo.Infos[i]
+		numa0 := &http_api.Numa{
+			Index: i,
+		}
+
+		l1 := len(node.Cores)
+		numa0.Cpus = make([]*http_api.CPU, 0, l1)
+		for cpu, cpuInfo0 := range node.Cores {
+			cpuLoad0 := math_utils.Round2(cpuInfo0.CpuLoad)
+			cpu0 := &http_api.CPU{
+				Index: cpu,
+				Load:  cpuLoad0,
+			}
+			numa0.Cpus = append(numa0.Cpus, cpu0)
+		}
+		state.Numa = append(state.Numa, numa0)
+		sort.Slice(numa0.Cpus, func(i, j int) bool {
+			return numa0.Cpus[i].Index < numa0.Cpus[j].Index
+		})
+	}
+	sort.Slice(state.Numa, func(i, j int) bool {
+		return state.Numa[i].Index < state.Numa[j].Index
+	})
 
 	state.Error = ""
 	return state

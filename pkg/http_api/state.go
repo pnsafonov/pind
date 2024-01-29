@@ -5,6 +5,7 @@ type State struct {
 	Time  string           `json:"time"`
 	Procs map[string]*Proc `json:"procs"`
 	Pool  Pool             `json:"pool"`
+	Numa  []*Numa          `json:"numa"`
 }
 
 type Proc struct {
@@ -38,4 +39,14 @@ type Pool struct {
 type Load struct {
 	Used []int `json:"used"`
 	Free []int `json:"free"`
+}
+
+type Numa struct {
+	Index int    `json:"index"`
+	Cpus  []*CPU `json:"cpus"`
+}
+
+type CPU struct {
+	Index int     `json:"index"`
+	Load  float64 `json:"load"`
 }
