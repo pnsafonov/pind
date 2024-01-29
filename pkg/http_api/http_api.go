@@ -20,6 +20,7 @@ func NewHttpApi(config0 *config.HttpApi) *HttpApi {
 	httpApi := &HttpApi{
 		Config: config0,
 	}
+	httpApi.setState0()
 	return httpApi
 }
 
@@ -52,6 +53,13 @@ func (x *HttpApi) SetState(state *State) error {
 	x.state = state
 	x.stateBytes = stateBytes
 	return nil
+}
+
+func (x *HttpApi) setState0() {
+	state := &State{
+		Error: "not_inited",
+	}
+	_ = x.SetState(state)
 }
 
 func (x *HttpApi) serve(l net.Listener) {

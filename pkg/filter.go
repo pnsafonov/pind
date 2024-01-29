@@ -223,3 +223,43 @@ func isIgnored(comm string, ignore *config.Ignore) bool {
 	}
 	return false
 }
+
+func parseVmName(cmd []string) (string, bool) {
+	l0 := len(cmd)
+	for i := 0; i < l0; i++ {
+		arg0 := strings.TrimSpace(cmd[i])
+		if arg0 == "-name" {
+			i1 := i + 1
+			if i1 < l0 {
+				arg1 := cmd[i1]
+				spli1 := strings.Split(arg1, ",")
+				l1 := len(spli1)
+
+				// mz-pgpro-8796-ent-load,debug-threads=on
+				for j := 0; j < l1; j++ {
+					str0 := strings.TrimSpace(spli1[j])
+					if !strings.Contains(str0, "=") {
+						return str0, true
+					}
+				}
+
+				// guest=deb-3,debug-threads=on
+				for j := 0; j < l1; j++ {
+					str1 := spli1[j]
+					if strings.Contains(str1, "=") {
+						split2 := strings.Split(str1, "=")
+						l2 := len(split2)
+						if l2 >= 2 {
+							key0 := strings.TrimSpace(split2[0])
+							val0 := strings.TrimSpace(split2[1])
+							if key0 == "guest" {
+								return val0, true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return "", false
+}
