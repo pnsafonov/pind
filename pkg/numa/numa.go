@@ -9,11 +9,13 @@ import (
 )
 
 var (
-	initError  error
-	nodeMaxId  = -1
-	nodesCount = 0
-	nodes      []*NodeInfo
-	procfs0    procfs.FS
+	initError           error
+	nodeMaxId           = -1
+	nodesCount          = 0
+	nodes               []*NodeInfo
+	procfs0             procfs.FS
+	ErrNumaNodeNotFound = fmt.Errorf("numa_node_not_found")
+	ErrNotSameNumaNodes = fmt.Errorf("not_same_numa_nodes")
 )
 
 func init() {
@@ -153,4 +155,40 @@ func CpusToMask(cpus []int) unix.CPUSet {
 	}
 
 	return mask
+}
+
+func getNumaNode(cpu int, nodes0 []*NodeInfo) (*NodeInfo, error) {
+	for _, node := range nodes0 {
+		for _, cpuNode := range node.Cpus {
+			if cpu == cpuNode {
+				return node, nil
+			}
+		}
+	}
+	return nil, ErrNumaNodeNotFound
+}
+
+func IsCpusOnSameNumaNode(cpus []int) error {
+	nodes0, err := GetNodes()
+	if err != nil {
+		log.Errorf("IsCpuOnOneNumaNode, GetNodes err = %v", err)
+		return err
+	}
+
+	var sameNode *NodeInfo
+	for _, cpu := range cpus {
+		node, err0 := getNumaNode(cpu, nodes0)
+		if err0 != nil {
+			return err0
+		}
+		if sameNode == nil {
+			sameNode = node
+			continue
+		}
+		if sameNode != node {
+			return ErrNotSameNumaNodes
+		}
+	}
+
+	return nil
 }

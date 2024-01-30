@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"pind/pkg/config"
 	"pind/pkg/http_api"
+	"pind/pkg/numa"
 )
 
 const (
@@ -27,6 +28,12 @@ func loadConfigAndInit(ctx *Context) error {
 		return err
 	}
 	log.Infof("\n%s", str0)
+
+	err = checkConfig(config0)
+	if err != nil {
+		log.Errorf("loadConfig, checkConfig err = %v", err)
+		return err
+	}
 
 	pool, err := NewPool(config0.Service.Pool)
 	if err != nil {
@@ -59,5 +66,16 @@ func loadConfigFile(ctx *Context) error {
 	}
 
 	ctx.Config = config0
+	return nil
+}
+
+func checkConfig(config0 *config.Config) error {
+	idle := config0.Service.Pool.Idle.Values
+	err := numa.IsCpusOnSameNumaNode(idle)
+	if err != nil {
+		log.Errorf("checkConfig, pool idle numa.IsCpusOnSameNumaNode err = %v", err)
+		return err
+	}
+
 	return nil
 }
