@@ -84,3 +84,17 @@ func ParseIntervals(str0 string) (Intervals, error) {
 
 	return result, nil
 }
+
+func IsCpuInSlice(cpu int, cpus []int) bool {
+	l0 := len(cpus)
+	for i := 0; i < l0; i++ {
+		if cpus[i] == cpu {
+			return true
+		}
+	}
+	return false
+}
+
+func IsCpuInInterval(cpu int, interval Intervals) bool {
+	return IsCpuInSlice(cpu, interval.Values)
+}

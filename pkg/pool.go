@@ -9,37 +9,70 @@ import (
 
 type Pool struct {
 	Config config.Pool
-	Nodes  []*numa.NodeInfo
+	Nodes  []*PoolNodeInfo
 
-	FullMask unix.CPUSet
-	IdleMask unix.CPUSet
-	LoadMask unix.CPUSet
+	//FullMask unix.CPUSet
+	//IdleMask unix.CPUSet
+	//LoadMask unix.CPUSet
 
 	IdleLoadFull0 float64 // 400, 600, 800 %
 	IdleLoad0     float64 // 400, 600, 800 %
 	IdleLoad1     float64 // 0-100 %
 }
 
-func NewPool(config config.Pool) (*Pool, error) {
+type PoolNodeInfo struct {
+	Index    int
+	Node     *numa.NodeInfo
+	LoadFree map[int]byte
+	LoadUsed map[int]byte
+}
+
+func NewPoolNodes(nodes []*numa.NodeInfo, config0 config.Pool) []*PoolNodeInfo {
+	l0 := len(nodes)
+	poolNodes := make([]*PoolNodeInfo, 0, l0)
+	for i := 0; i < l0; i++ {
+		node := nodes[i]
+		free := make(map[int]byte)
+		poolNode := &PoolNodeInfo{
+			Index:    node.Index,
+			Node:     node,
+			LoadFree: free,
+			LoadUsed: make(map[int]byte),
+		}
+		poolNodes = append(poolNodes, poolNode)
+
+		for _, cpu := range node.Cpus {
+			if config.IsCpuInInterval(cpu, config0.Load) {
+				free[cpu] = 1
+			}
+		}
+	}
+
+	return poolNodes
+}
+
+func NewPool(config0 config.Pool) (*Pool, error) {
 	nodes, err := numa.GetNodes()
 	if err != nil {
 		log.Errorf("NewPool, numa.GetNodes err = %v", err)
 		return nil, err
 	}
 
-	fullMask := numa.NodesToFullMask(nodes)
-	idleMask := numa.CpusToMask(config.Idle.Values)
-	loadMask := numa.CpusToMask(config.Load.Values)
+	poolNodes := NewPoolNodes(nodes, config0)
 
-	l0 := len(config.Idle.Values)
+	//fullMask := numa.NodesToFullMask(nodes)
+	//idleMask := numa.CpusToMask(config0.Idle.Values)
+	//loadMask := numa.CpusToMask(config0.Load.Values)
+
+	l0 := len(config0.Idle.Values)
 	idleLoadFull := float64(l0) * 100
 
 	pool := &Pool{
-		Config:        config,
-		Nodes:         nodes,
-		FullMask:      fullMask,
-		IdleMask:      idleMask,
-		LoadMask:      loadMask,
+		Config: config0,
+		Nodes:  poolNodes,
+		//FullMask:      fullMask,
+		//IdleMask:      idleMask,
+		//LoadMask:      loadMask,
 		IdleLoadFull0: idleLoadFull,
 	}
 
