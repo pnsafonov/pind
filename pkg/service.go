@@ -286,6 +286,8 @@ func calcCoresCPU(ctx *Context) error {
 		}
 	}
 
+	calcIdlePoolLoad(ctx.pool, cpuInfos)
+
 	ctx.lastCpuInfo = cpuInfos
 	return nil
 }
@@ -322,4 +324,24 @@ func calcCoreCpuLoad0(prev *numa.CpuInfo, cur *numa.CpuInfo) float64 {
 	load *= 100
 
 	return load
+}
+
+func calcIdlePoolLoad(pool *Pool, cpuInfo *numa.Info) {
+	idle := pool.Config.Idle.Values
+
+	load := float64(0)
+	for _, cpu := range idle {
+		info, ok := cpuInfo.GetCpuInfo(cpu)
+		if !ok {
+			log.Warningf("calcIdlePoolLoad, cpuInfo.GetCpuInfo failed for cpu = %d", cpu)
+			continue
+		}
+		load += info.CpuLoad
+	}
+
+	pool.IdleLoad0 = load
+
+	load1 := pool.IdleLoad0 / pool.FullLoad0
+	load1 *= 100
+	pool.IdleLoad1 = load1
 }

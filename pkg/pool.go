@@ -8,11 +8,16 @@ import (
 )
 
 type Pool struct {
-	Config   config.Pool
-	Nodes    []*numa.NodeInfo
+	Config config.Pool
+	Nodes  []*numa.NodeInfo
+
 	FullMask unix.CPUSet
 	IdleMask unix.CPUSet
 	LoadMask unix.CPUSet
+
+	FullLoad0 float64 // 400, 600, 800 %
+	IdleLoad0 float64 // 400, 600, 800 %
+	IdleLoad1 float64 // 0-100 %
 }
 
 func NewPool(config config.Pool) (*Pool, error) {
@@ -26,12 +31,16 @@ func NewPool(config config.Pool) (*Pool, error) {
 	idleMask := numa.CpusToMask(config.Idle.Values)
 	loadMask := numa.CpusToMask(config.Load.Values)
 
+	l0 := len(config.Idle.Values)
+	fullLoad := float64(l0) * 100
+
 	pool := &Pool{
-		Config:   config,
-		Nodes:    nodes,
-		FullMask: fullMask,
-		IdleMask: idleMask,
-		LoadMask: loadMask,
+		Config:    config,
+		Nodes:     nodes,
+		FullMask:  fullMask,
+		IdleMask:  idleMask,
+		LoadMask:  loadMask,
+		FullLoad0: fullLoad,
 	}
 
 	return pool, nil

@@ -22,6 +22,18 @@ type CpuInfo struct {
 	CpuLoad float64        // % of cpu time used
 }
 
+func (x *Info) GetCpuInfo(cpu int) (*CpuInfo, bool) {
+	l0 := len(x.Infos)
+	for i := 0; i < l0; i++ {
+		info := x.Infos[i]
+		cpuInfo, ok := info.Cores[cpu]
+		if ok {
+			return cpuInfo, true
+		}
+	}
+	return nil, false
+}
+
 func newInfo() (*Info, error) {
 	if initError != nil {
 		return nil, initError

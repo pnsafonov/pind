@@ -27,6 +27,8 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 		state.Pool.Load.Free = append(state.Pool.Load.Free, cpu)
 	}
 	state.Pool.Idle = ctx.Config.Service.Pool.Idle.Values
+	state.Pool.IdleLoad0 = math_utils.Round2(ctx.pool.IdleLoad0)
+	state.Pool.IdleLoad1 = math_utils.Round2(ctx.pool.IdleLoad1)
 
 	state.Time = getProcTimeStr(ctx)
 
