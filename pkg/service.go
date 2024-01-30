@@ -167,7 +167,7 @@ func handler(ctx *Context, time0 time.Time) {
 
 	err5 := calcCoresCPU(ctx)
 	if err5 != nil {
-		log.Errorf("handler, calcCoresCPU err = %v", err0)
+		log.Errorf("handler, calcCoresCPU err = %v", err5)
 	}
 
 	ctx.state.UpdateProcs(ctx.lastInFilter)
@@ -341,7 +341,7 @@ func calcIdlePoolLoad(pool *Pool, cpuInfo *numa.Info) {
 
 	pool.IdleLoad0 = load
 
-	load1 := pool.IdleLoad0 / pool.FullLoad0
+	load1 := pool.IdleLoad0 / pool.IdleLoadFull0
 	load1 *= 100
 	pool.IdleLoad1 = load1
 }

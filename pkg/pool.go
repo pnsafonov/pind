@@ -15,9 +15,9 @@ type Pool struct {
 	IdleMask unix.CPUSet
 	LoadMask unix.CPUSet
 
-	FullLoad0 float64 // 400, 600, 800 %
-	IdleLoad0 float64 // 400, 600, 800 %
-	IdleLoad1 float64 // 0-100 %
+	IdleLoadFull0 float64 // 400, 600, 800 %
+	IdleLoad0     float64 // 400, 600, 800 %
+	IdleLoad1     float64 // 0-100 %
 }
 
 func NewPool(config config.Pool) (*Pool, error) {
@@ -32,15 +32,15 @@ func NewPool(config config.Pool) (*Pool, error) {
 	loadMask := numa.CpusToMask(config.Load.Values)
 
 	l0 := len(config.Idle.Values)
-	fullLoad := float64(l0) * 100
+	idleLoadFull := float64(l0) * 100
 
 	pool := &Pool{
-		Config:    config,
-		Nodes:     nodes,
-		FullMask:  fullMask,
-		IdleMask:  idleMask,
-		LoadMask:  loadMask,
-		FullLoad0: fullLoad,
+		Config:        config,
+		Nodes:         nodes,
+		FullMask:      fullMask,
+		IdleMask:      idleMask,
+		LoadMask:      loadMask,
+		IdleLoadFull0: idleLoadFull,
 	}
 
 	return pool, nil
