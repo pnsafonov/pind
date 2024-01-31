@@ -182,9 +182,9 @@ func handler(ctx *Context, time0 time.Time) {
 		log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
 	}
 
-	err3 := ctx.state.PinLoad(ctx)
+	err3 := ctx.state.PinLoad0(ctx)
 	if err3 != nil {
-		log.Errorf("handler, ctx.state.PinLoad err = %v", err3)
+		log.Errorf("handler, ctx.state.PinLoad0 err = %v", err3)
 	}
 
 	err4 := setHttpApiData(ctx)

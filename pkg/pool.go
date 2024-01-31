@@ -8,8 +8,9 @@ import (
 )
 
 type Pool struct {
-	Config config.Pool
-	Nodes  []*PoolNodeInfo
+	Config    config.Pool
+	Nodes     []*PoolNodeInfo
+	NodeIndex int
 
 	//FullMask unix.CPUSet
 	//IdleMask unix.CPUSet
@@ -77,6 +78,82 @@ func NewPool(config0 config.Pool) (*Pool, error) {
 	}
 
 	return pool, nil
+}
+
+// getNumaNodeForLoadAssign - search for numa node changing starting node
+func (x *Pool) getNumaNodeForLoadAssign(requiredCount int) (*PoolNodeInfo, bool) {
+	l0 := len(x.Nodes)
+	var freeNode *PoolNodeInfo
+	counter := 0
+	i := x.NodeIndex
+	for {
+		if i >= l0 {
+			i = 0
+		}
+		if counter >= l0 {
+			break
+		}
+
+		node := x.Nodes[i]
+		freeCount := len(node.LoadFree)
+		if freeCount >= requiredCount {
+			freeNode = node
+			i++
+			break
+		}
+
+		i++
+		counter++
+	}
+	x.NodeIndex = i
+	return freeNode, freeNode != nil
+}
+
+func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
+	node := x
+	noSelected := ctx.Config.Service.PinCoresAlgo.NotSelected
+	selected := ctx.Config.Service.PinCoresAlgo.Selected
+
+	count := 0
+	if proc.ContainsNotSelectedThread() {
+		count += proc.NotSelected.AssignRequiredCores0(node, noSelected)
+	}
+
+	for _, thread := range proc.Threads {
+		if thread.ThreadInfo.Ignored {
+			continue
+		}
+		if thread.Selected != ThreadSelectionYes {
+			continue
+		}
+		count += thread.Cpus.AssignRequiredCores0(node, selected)
+	}
+
+	return count
+}
+
+// getFreeCore - returns free core
+func (x *PoolNodeInfo) getFreeCore() (int, bool) {
+	for cpu, _ := range x.LoadFree {
+		delete(x.LoadFree, cpu)
+		x.LoadUsed[cpu] = 1
+		return cpu, true
+	}
+	return -1, false
+}
+
+// freeCore - change core state from used to free
+func (x *PoolNodeInfo) freeCore(core int) bool {
+	_, ok := x.LoadUsed[core]
+	if !ok {
+		// core not exits in this numa!
+		// or not used
+		return false
+	}
+
+	delete(x.LoadUsed, core)
+	x.LoadFree[core] = 1
+	return true
 }
 
 // isMasksEqual - if masks are equal

@@ -23,8 +23,8 @@ var (
 
 type PinState struct {
 	Procs map[int]*PinProc // pid -> PinProc, add/remove/change processes
-	Used  map[int]*PinProc // cpu -> PinProc, add/remove/change used cpu
-	Idle  PinCpus          // mask for idle threads
+	//Used  map[int]*PinProc // cpu -> PinProc, add/remove/change used cpu
+	Idle PinCpus // mask for idle threads
 }
 
 type PinProc struct {
@@ -32,6 +32,7 @@ type PinProc struct {
 	ProcInfo *ProcInfo   // pointer changes every cycle
 
 	Threads     map[int]*PinThread // pid -> PinThread, add/remove/update
+	Node        *PoolNodeInfo      // process pinned to numa node
 	NotSelected PinCpus            // cores for not selected threads
 }
 
@@ -65,7 +66,7 @@ func NewIdlePinCpu(ctx *Context) PinCpus {
 func NewPinState() PinState {
 	state := PinState{
 		Procs: make(map[int]*PinProc),
-		Used:  make(map[int]*PinProc),
+		//Used:  make(map[int]*PinProc),
 	}
 	return state
 }
@@ -118,7 +119,7 @@ func (x *PinState) UpdateProcs(procs []*ProcInfo) {
 		}
 		// free cpu on process end
 		for _, thread := range proc.Threads {
-			freeThreadCpus(state, thread)
+			freeThreadCpus0(proc, thread)
 		}
 
 		// process is finished
@@ -141,15 +142,26 @@ func (x *PinState) UpdateProcs(procs []*ProcInfo) {
 	}
 }
 
-// freeThreadCpus - free cpu's list used pinned to thread
-func freeThreadCpus(state *PinState, thread *PinThread) {
+func freeThreadCpus0(proc *PinProc, thread *PinThread) int {
+	node := proc.Node
+	if node == nil {
+		// numa node is not assigned
+		thread.Cpus.Zero()
+		return 0
+	}
+
+	count := 0
 	l0 := len(thread.Cpus.Cpus)
 	for i := 0; i < l0; i++ {
 		cpu := thread.Cpus.Cpus[i]
-		log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, used = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, state.Used)
-		delete(state.Used, cpu)
+		result := node.freeCore(cpu)
+		if result {
+			count++
+		}
+		log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, result = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, result)
 	}
 	thread.Cpus.Zero()
+	return count
 }
 
 func getThreadByPID(threads []*ThreadInfo, pid int) (*ThreadInfo, bool) {
@@ -175,7 +187,7 @@ func (x *PinProc) UpdateProc(proc *ProcInfo, state *PinState) {
 		needFree := isThreadCanBeFreed(thread, x)
 		if needFree {
 			// free cpu on thread end
-			freeThreadCpus(state, thread)
+			freeThreadCpus0(x, thread)
 
 			if thread.Selected == ThreadSelectionNo {
 				// after free not selected threads, reset cpus cores pattern
@@ -243,6 +255,30 @@ func (x *PinProc) ContainsNotSelectedThread() bool {
 	return x.ContainsThread(ThreadSelectionNo)
 }
 
+func (x *PinProc) getRequiredCpuCount(ctx *Context) int {
+	requiredNotSelected := ctx.Config.Service.PinCoresAlgo.NotSelected
+	requiredSelected := ctx.Config.Service.PinCoresAlgo.Selected
+
+	notSelected := 0
+	if x.ContainsNotSelectedThread() {
+		notSelected = x.NotSelected.getRequiredCpuCount(requiredNotSelected)
+	}
+
+	selected := 0
+	for _, thread := range x.Threads {
+		if thread.ThreadInfo.Ignored {
+			continue
+		}
+		if thread.Selected != ThreadSelectionYes {
+			continue
+		}
+		selected0 := thread.Cpus.getRequiredCpuCount(requiredSelected)
+		selected += selected0
+	}
+
+	return notSelected + selected
+}
+
 // UpdateThread - set actual information abount thread
 func (x *PinThread) UpdateThread(thread *ThreadInfo) {
 	x.ThreadInfo = thread
@@ -259,7 +295,7 @@ func (x *PinState) PinIdle() error {
 
 		for _, thread := range procInfo.Threads {
 			if thread.Cpus.IsAnyInited() {
-				freeThreadCpus(state, thread)
+				freeThreadCpus0(procInfo, thread)
 			}
 
 			if thread.ThreadInfo.Ignored {
@@ -285,11 +321,12 @@ func (x *PinState) PinIdle() error {
 	return err
 }
 
-func (x *PinState) PinLoad(ctx *Context) error {
+func (x *PinState) PinLoad0(ctx *Context) error {
 	var err error
 	state := x
 	patterns := ctx.Config.Service.Selection.Patterns
-	algo := ctx.Config.Service.PinCoresAlgo
+	//algo := ctx.Config.Service.PinCoresAlgo
+	pool := ctx.pool
 
 	// update selection
 	for _, procInfo := range state.Procs {
@@ -308,45 +345,31 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		}
 	}
 
-	// assign masks
+	// assign numa nodes, assign cpu cores
 	for _, procInfo := range state.Procs {
 		if !procInfo.ProcInfo.load {
 			continue
 		}
-		// we must check, that at least 1 not selected thread exists
-		containsNotSelectedThread := procInfo.ContainsNotSelectedThread()
-		if containsNotSelectedThread {
-			// we must init mask for not selected threads
-			if !procInfo.NotSelected.IsInited(algo.NotSelected) {
-				err0 := procInfo.NotSelected.AssignCores(ctx, algo.NotSelected, procInfo)
-				if err0 != nil {
-					err = err0
-				}
-			}
+
+		cpuCount := procInfo.getRequiredCpuCount(ctx)
+		if cpuCount <= 0 {
+			continue
 		}
 
-		for _, threadInfo := range procInfo.Threads {
-			if threadInfo.ThreadInfo.Ignored {
+		node := procInfo.Node
+		if node == nil {
+			node0, ok := pool.getNumaNodeForLoadAssign(cpuCount)
+			if !ok {
+				err = fmt.Errorf("PinState, PinLoad0 pool.getNumaNodeForLoadAssign failed for cpuCount = %d", cpuCount)
 				continue
 			}
-			if threadInfo.Selected == ThreadSelectionNo {
-				if !threadInfo.Cpus.IsInited(algo.NotSelected) {
-					// use same mask for not selected threads
-					threadInfo.Cpus = procInfo.NotSelected
-				}
-				continue
-			}
-			if threadInfo.Selected == ThreadSelectionYes {
-				if !threadInfo.Cpus.IsInited(algo.Selected) {
-					// use different cores for selected threads
-					err0 := threadInfo.Cpus.AssignCores(ctx, algo.Selected, procInfo)
-					if err0 != nil {
-						err = err0
-					}
-				}
-				continue
-			}
-			log.Errorf("PinLoad, execution must not be here!")
+			procInfo.Node = node0
+			node = node0
+		}
+
+		assignedCount := node.assignCores(ctx, procInfo)
+		if assignedCount != cpuCount {
+			log.Warningf("PinState PinLoad0, node.assignCores failed, assignedCount = %d need cpuCount = %d", assignedCount, cpuCount)
 		}
 	}
 
@@ -421,30 +444,34 @@ func (x *PinCpus) IsInited(count int) bool {
 	return l0 >= count
 }
 
-func (x *PinCpus) AssignCores(ctx *Context, count int, procInfo *PinProc) error {
-	err := ErrNoFreeCores
-	load := ctx.Config.Service.Pool.Load
-	used := ctx.state.Used
+func (x *PinCpus) getRequiredCpuCount(requiredCount int) int {
+	l0 := len(x.Cpus)
+	if l0 >= requiredCount {
+		return 0
+	}
+	return requiredCount - l0
+}
 
-	l0 := len(load.Values)
-	for i := 0; i < l0; i++ {
-		cpu := load.Values[i]
-		_, ok := used[cpu]
-		if ok {
-			continue
-		}
-
-		used[cpu] = procInfo
-		x.Cpus = append(x.Cpus, cpu)
-		log.Debugf("AssignCores pid = %d, comm = %s, cpu = %d, used = %v", procInfo.ProcInfo.Stat.PID, procInfo.ProcInfo.Stat.Comm, cpu, used)
-		if len(x.Cpus) >= count {
-			err = nil
+func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
+	requiredCount := x.getRequiredCpuCount(count)
+	if requiredCount <= 0 {
+		return 0
+	}
+	assignedCount := 0
+	for ; assignedCount < requiredCount; assignedCount++ {
+		cpu, ok := node.getFreeCore()
+		if !ok {
 			break
 		}
+		x.Cpus = append(x.Cpus, cpu)
 	}
-
-	x.CpuSet = numa.CpusToMask(x.Cpus)
-	return err
+	//if assignedCount != requiredCount {
+	//	log.Warningf("PinCpus AssignRequiredCores0, assignedCount = %d, requiredCount = %d", assignedCount, requiredCount)
+	//}
+	if assignedCount > 0 {
+		x.CpuSet = numa.CpusToMask(x.Cpus)
+	}
+	return assignedCount
 }
 
 func pinNotInFilterToIdle(ctx *Context) error {

@@ -35,7 +35,6 @@ type Pool struct {
 	IdleLoad0 float64 `json:"idle_load0"`
 	IdleLoad1 float64 `json:"idle_load1"`
 	Idle      []int   `json:"idle"`
-	Load      Load    `json:"load"`
 }
 
 type Load struct {

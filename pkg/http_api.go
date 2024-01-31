@@ -15,17 +15,7 @@ func setHttpApiData(ctx *Context) error {
 func fillHttpApiState(ctx *Context) *http_api.State {
 	cpuInfo := ctx.lastCpuInfo
 	state := &http_api.State{}
-
-	for cpu, _ := range ctx.state.Used {
-		state.Pool.Load.Used = append(state.Pool.Load.Used, cpu)
-	}
-	for _, cpu := range ctx.Config.Service.Pool.Load.Values {
-		_, ok := ctx.state.Used[cpu]
-		if ok {
-			continue
-		}
-		state.Pool.Load.Free = append(state.Pool.Load.Free, cpu)
-	}
+	
 	state.Pool.Idle = ctx.Config.Service.Pool.Idle.Values
 	state.Pool.IdleLoad0 = math_utils.Round2(ctx.pool.IdleLoad0)
 	state.Pool.IdleLoad1 = math_utils.Round2(ctx.pool.IdleLoad1)

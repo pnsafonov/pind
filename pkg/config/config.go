@@ -174,14 +174,14 @@ func NewDefaultConfig() *Config {
 func Load(confPath0 string) (*Config, error) {
 	bytes0, err := os.ReadFile(confPath0)
 	if err != nil {
-		log.Errorf("confPath0, os.ReadFile err = %v\n", err)
+		log.Errorf("Load, os.ReadFile err = %v\n", err)
 		return nil, err
 	}
 
 	config := NewDefaultConfig()
 	err = yaml.Unmarshal(bytes0, config)
 	if err != nil {
-		log.Errorf("confPath0, yaml.Unmarshal err = %v\n", err)
+		log.Errorf("Load, yaml.Unmarshal err = %v\n", err)
 		return nil, err
 	}
 
