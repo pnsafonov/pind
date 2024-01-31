@@ -5,6 +5,7 @@ import (
 	"golang.org/x/sys/unix"
 	"pind/pkg/config"
 	"pind/pkg/numa"
+	"sort"
 )
 
 type Pool struct {
@@ -156,6 +157,29 @@ func (x *PoolNodeInfo) freeCore(core int) bool {
 	return true
 }
 
+func mapIntToSlice(map0 map[int]byte) []int {
+	l0 := len(map0)
+	var sl0 []int
+	if l0 > 0 {
+		sl0 = make([]int, 0, l0)
+		for key, _ := range map0 {
+			sl0 = append(sl0, key)
+		}
+		sort.Slice(sl0, func(i, j int) bool {
+			return sl0[i] < sl0[j]
+		})
+	}
+	return sl0
+}
+
+func (x *PoolNodeInfo) getLoadUsedSlice() []int {
+	return mapIntToSlice(x.LoadUsed)
+}
+
+func (x *PoolNodeInfo) getLoadFreeSlice() []int {
+	return mapIntToSlice(x.LoadFree)
+}
+
 // isMasksEqual - if masks are equal
 func isMasksEqual(mask0 unix.CPUSet, mask1 unix.CPUSet) bool {
 	l0 := len(mask0)
@@ -248,6 +272,9 @@ func MaskToArray(mask *unix.CPUSet) []int {
 		}
 	}
 
+	sort.Slice(cpus, func(i, j int) bool {
+		return cpus[i] < cpus[j]
+	})
 	return cpus
 }
 

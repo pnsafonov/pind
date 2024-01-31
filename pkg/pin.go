@@ -474,6 +474,19 @@ func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
 	return assignedCount
 }
 
+func (x *PinCpus) getCpusCopy() []int {
+	l0 := len(x.Cpus)
+	cpus := make([]int, l0)
+	copy(cpus, x.Cpus)
+	return cpus
+}
+
+func (x *PinCpus) getCpusCopy0() *[]int {
+	result := new([]int)
+	*result = x.getCpusCopy()
+	return result
+}
+
 func pinNotInFilterToIdle(ctx *Context) error {
 	var err error
 	state := ctx.state
