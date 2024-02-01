@@ -474,6 +474,24 @@ func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
 	return assignedCount
 }
 
+// AssignRequiredCores1 - use shared cores, for not selected threads
+func (x *PinCpus) AssignRequiredCores1(node *PoolNodeInfo, count int, shared *PinCpus) int {
+	count0 := shared.AssignRequiredCores0(node, count)
+
+	if !isMasksEqual(x.CpuSet, shared.CpuSet) {
+		x.assignAsCopy(shared)
+	}
+
+	return count0
+}
+
+func (x *PinCpus) assignAsCopy(right *PinCpus) {
+	l0 := len(right.Cpus)
+	x.Cpus = make([]int, l0)
+	copy(x.Cpus, right.Cpus)
+	x.CpuSet = right.CpuSet
+}
+
 func (x *PinCpus) getCpusCopy() []int {
 	l0 := len(x.Cpus)
 	cpus := make([]int, l0)

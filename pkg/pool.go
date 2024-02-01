@@ -116,20 +116,20 @@ func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
 	selected := ctx.Config.Service.PinCoresAlgo.Selected
 
 	count := 0
-	if proc.ContainsNotSelectedThread() {
-		count += proc.NotSelected.AssignRequiredCores0(node, noSelected)
-	}
-
 	for _, thread := range proc.Threads {
 		if thread.ThreadInfo.Ignored {
 			continue
 		}
-		if thread.Selected != ThreadSelectionYes {
+		if thread.Selected == ThreadSelectionNo {
+			count += thread.Cpus.AssignRequiredCores1(node, noSelected, &proc.NotSelected)
 			continue
 		}
-		count += thread.Cpus.AssignRequiredCores0(node, selected)
+		if thread.Selected == ThreadSelectionYes {
+			count += thread.Cpus.AssignRequiredCores0(node, selected)
+			continue
+		}
+		log.Warningf("PoolNodeInfo assignCores, execution must not be here!")
 	}
-
 	return count
 }
 
