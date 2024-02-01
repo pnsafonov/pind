@@ -1,9 +1,9 @@
 package http_api
 
 type State struct {
-	Error string `json:"error"`
-	Time  string `json:"time"`
-	Procs *Procs `json:"procs"`
+	Errors *Errors `json:"errors"`
+	Time   string  `json:"time"`
+	Procs  *Procs  `json:"procs"`
 
 	Pool *Pool   `json:"pool"`
 	Numa []*Numa `json:"numa"`
@@ -20,7 +20,6 @@ type Proc struct {
 	VmName           string    `json:"vmname"`
 	CPU              float64   `json:"cpu"`
 	Load             bool      `json:"load"`
-	Filtered         bool      `json:"filtered"`
 	NotSelectedCores *[]int    `json:"not_selected_cores,omitempty"`
 	Threads          []*Thread `json:"threads"`
 }
@@ -64,4 +63,18 @@ type Numa struct {
 type CPU struct {
 	Index int     `json:"index"`
 	Load  float64 `json:"load"`
+}
+
+type Errors struct {
+	CalcProcsCPU         string      `json:"calc_procs_cpu"`
+	CalcCoresCPU         string      `json:"calc_cores_cpu"`
+	PinNotInFilterToIdle string      `json:"pin_not_in_filter_to_idle"`
+	StatePinIdle         string      `json:"state_pin_idle"`
+	StatePinLoad         string      `json:"state_pin_load"`
+	RequiredCPU          RequiredCPU `json:"required_cpu"`
+}
+
+type RequiredCPU struct {
+	Total      int   `json:"total"`
+	PerProcess []int `json:"per_process"`
 }

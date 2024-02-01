@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 	"pind/pkg/numa"
+	"pind/pkg/utils/core_utils"
 )
 
 type ThreadSelection int
@@ -22,9 +23,9 @@ var (
 )
 
 type PinState struct {
-	Procs map[int]*PinProc // pid -> PinProc, add/remove/change processes
-	//Used  map[int]*PinProc // cpu -> PinProc, add/remove/change used cpu
-	Idle PinCpus // mask for idle threads
+	Procs  map[int]*PinProc // pid -> PinProc, add/remove/change processes
+	Idle   PinCpus          // mask for idle threads
+	Errors *Errors
 }
 
 type PinProc struct {
@@ -49,24 +50,37 @@ type PinCpus struct {
 	CpuSet unix.CPUSet // must be assigned, same as Cpus
 }
 
+type Errors struct {
+	CalcProcsCPU         error
+	CalcCoresCPU         error
+	PinNotInFilterToIdle error
+	StatePinIdle         error
+	StatePinLoad         error
+	RequiredCPU          RequiredCPU
+}
+
+type RequiredCPU struct {
+	Total      int
+	PerProcess []int
+}
+
 func NewIdlePinCpu(ctx *Context) PinCpus {
 	idle := ctx.Config.Service.Pool.Idle.Values
-	l0 := len(idle)
 
+	cpus := core_utils.CopyIntSlice(idle)
 	cpuSet := numa.CpusToMask(idle)
 	pinCpus := PinCpus{
-		Cpus:   make([]int, l0),
+		Cpus:   cpus,
 		CpuSet: cpuSet,
 	}
-	copy(pinCpus.Cpus, idle)
 
 	return pinCpus
 }
 
 func NewPinState() PinState {
 	state := PinState{
-		Procs: make(map[int]*PinProc),
-		//Used:  make(map[int]*PinProc),
+		Procs:  make(map[int]*PinProc),
+		Errors: &Errors{},
 	}
 	return state
 }
@@ -321,9 +335,10 @@ func (x *PinState) PinIdle() error {
 	return err
 }
 
-func (x *PinState) PinLoad0(ctx *Context) error {
+func (x *PinState) PinLoad(ctx *Context) error {
 	var err error
 	state := x
+	errs := state.Errors
 	patterns := ctx.Config.Service.Selection.Patterns
 	//algo := ctx.Config.Service.PinCoresAlgo
 	pool := ctx.pool
@@ -360,7 +375,8 @@ func (x *PinState) PinLoad0(ctx *Context) error {
 		if node == nil {
 			node0, ok := pool.getNumaNodeForLoadAssign(cpuCount)
 			if !ok {
-				err = fmt.Errorf("PinState, PinLoad0 pool.getNumaNodeForLoadAssign failed for cpuCount = %d", cpuCount)
+				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCount = %d", cpuCount)
+				errs.RequiredCPU.addCpuCount(cpuCount)
 				continue
 			}
 			procInfo.Node = node0
@@ -369,7 +385,7 @@ func (x *PinState) PinLoad0(ctx *Context) error {
 
 		assignedCount := node.assignCores(ctx, procInfo)
 		if assignedCount != cpuCount {
-			log.Warningf("PinState PinLoad0, node.assignCores failed, assignedCount = %d need cpuCount = %d", assignedCount, cpuCount)
+			log.Warningf("PinState PinLoad, node.assignCores failed, assignedCount = %d need cpuCount = %d", assignedCount, cpuCount)
 		}
 	}
 
@@ -486,17 +502,12 @@ func (x *PinCpus) AssignRequiredCores1(node *PoolNodeInfo, count int, shared *Pi
 }
 
 func (x *PinCpus) assignAsCopy(right *PinCpus) {
-	l0 := len(right.Cpus)
-	x.Cpus = make([]int, l0)
-	copy(x.Cpus, right.Cpus)
+	x.Cpus = core_utils.CopyIntSlice(right.Cpus)
 	x.CpuSet = right.CpuSet
 }
 
 func (x *PinCpus) getCpusCopy() []int {
-	l0 := len(x.Cpus)
-	cpus := make([]int, l0)
-	copy(cpus, x.Cpus)
-	return cpus
+	return core_utils.CopyIntSlice(x.Cpus)
 }
 
 func (x *PinCpus) getCpusCopy0() *[]int {
@@ -532,4 +543,19 @@ func pinNotInFilterToIdle(ctx *Context) error {
 		}
 	}
 	return err
+}
+
+func (x *Errors) clear() {
+	x.CalcProcsCPU = nil
+	x.CalcCoresCPU = nil
+	x.PinNotInFilterToIdle = nil
+	x.StatePinIdle = nil
+	x.StatePinLoad = nil
+	x.RequiredCPU.Total = 0
+	x.RequiredCPU.PerProcess = x.RequiredCPU.PerProcess[:0]
+}
+
+func (x *RequiredCPU) addCpuCount(count int) {
+	x.Total += count
+	x.PerProcess = append(x.PerProcess, count)
 }

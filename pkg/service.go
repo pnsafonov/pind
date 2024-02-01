@@ -160,14 +160,19 @@ func printProcs1(procs []*ProcInfo, time0 time.Time, timeDelta float64) {
 }
 
 func handler(ctx *Context, time0 time.Time) {
+	errs := ctx.state.Errors
+	errs.clear()
+
 	err0 := calcProcsCPU(ctx, time0)
 	if err0 != nil {
 		log.Errorf("handler, calcProcsCPU err = %v", err0)
+		errs.CalcProcsCPU = err0
 	}
 
 	err5 := calcCoresCPU(ctx)
 	if err5 != nil {
 		log.Errorf("handler, calcCoresCPU err = %v", err5)
+		errs.CalcCoresCPU = err5
 	}
 
 	ctx.state.UpdateProcs(ctx.lastInFilter)
@@ -175,16 +180,19 @@ func handler(ctx *Context, time0 time.Time) {
 	err1 := pinNotInFilterToIdle(ctx)
 	if err1 != nil {
 		log.Errorf("handler, pinNotInFilterToIdle err = %v", err1)
+		errs.PinNotInFilterToIdle = err1
 	}
 
 	err2 := ctx.state.PinIdle()
 	if err2 != nil {
 		log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
+		errs.StatePinIdle = err2
 	}
 
-	err3 := ctx.state.PinLoad0(ctx)
+	err3 := ctx.state.PinLoad(ctx)
 	if err3 != nil {
-		log.Errorf("handler, ctx.state.PinLoad0 err = %v", err3)
+		log.Errorf("handler, ctx.state.PinLoad err = %v", err3)
+		errs.StatePinLoad = err3
 	}
 
 	err4 := setHttpApiData(ctx)

@@ -22,11 +22,16 @@ service:
         - type: name
           patterns:
               # all patterns must be selected
-              - deb-2
-        - type: name
-          patterns:
-              # all patterns must be selected
-              - deb-3
+              - /usr/bin/qemu-system-x86_64
+#        - type: name
+#          patterns:
+#              # all patterns must be selected
+#              - deb-2
+#        - type: name
+#          patterns:
+#              # all patterns must be selected
+#              - deb-3
+
     pool:
         idle: 0-1
 #        load: 2-5

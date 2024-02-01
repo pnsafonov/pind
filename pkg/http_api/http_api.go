@@ -56,9 +56,7 @@ func (x *HttpApi) SetState(state *State) error {
 }
 
 func (x *HttpApi) setState0() {
-	state := &State{
-		Error: "not_inited",
-	}
+	state := &State{}
 	_ = x.SetState(state)
 }
 

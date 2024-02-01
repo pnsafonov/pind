@@ -3,8 +3,10 @@ package pkg
 import (
 	"fmt"
 	"pind/pkg/http_api"
+	"pind/pkg/utils/core_utils"
 	"pind/pkg/utils/math_utils"
 	"sort"
+	"time"
 )
 
 func setHttpApiData(ctx *Context) error {
@@ -74,13 +76,15 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 		return state.Numa[i].Index < state.Numa[j].Index
 	})
 
-	state.Error = ""
+	errs := getErrors(ctx)
+	state.Errors = errs
+
 	return state
 }
 
 func getProcTimeStr(ctx *Context) string {
 	for _, procInfo0 := range ctx.lastAll {
-		return procInfo0.time.String()
+		return procInfo0.time.Format(time.RFC3339)
 	}
 	return ""
 }
@@ -196,4 +200,27 @@ func ThreadSelectionToBool0(val ThreadSelection) (result *bool) {
 		return
 	}
 	return
+}
+
+func getErrors(ctx *Context) *http_api.Errors {
+	errs0 := ctx.state.Errors
+
+	errs := &http_api.Errors{
+		CalcProcsCPU:         getErrorStr(errs0.CalcCoresCPU),
+		CalcCoresCPU:         getErrorStr(errs0.CalcCoresCPU),
+		PinNotInFilterToIdle: getErrorStr(errs0.PinNotInFilterToIdle),
+		StatePinIdle:         getErrorStr(errs0.StatePinIdle),
+		StatePinLoad:         getErrorStr(errs0.StatePinLoad),
+	}
+	errs.RequiredCPU.Total = errs0.RequiredCPU.Total
+	errs.RequiredCPU.PerProcess = core_utils.CopyIntSlice(errs0.RequiredCPU.PerProcess)
+
+	return errs
+}
+
+func getErrorStr(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }
