@@ -13,6 +13,7 @@ service:
     interval: 1000
 #    threshold: 150
     threshold: 75
+    idle_overwork: 80
     filters0:
         - type: name
           patterns:

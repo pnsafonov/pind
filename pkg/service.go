@@ -294,7 +294,7 @@ func calcCoresCPU(ctx *Context) error {
 		}
 	}
 
-	calcIdlePoolLoad(ctx.pool, cpuInfos)
+	calcIdlePoolLoad(ctx, cpuInfos)
 
 	ctx.lastCpuInfo = cpuInfos
 	return nil
@@ -334,8 +334,10 @@ func calcCoreCpuLoad0(prev *numa.CpuInfo, cur *numa.CpuInfo) float64 {
 	return load
 }
 
-func calcIdlePoolLoad(pool *Pool, cpuInfo *numa.Info) {
+func calcIdlePoolLoad(ctx *Context, cpuInfo *numa.Info) {
+	pool := ctx.pool
 	idle := pool.Config.Idle.Values
+	idleOverwork := ctx.Config.Service.IdleOverwork
 
 	load := float64(0)
 	for _, cpu := range idle {
@@ -352,4 +354,9 @@ func calcIdlePoolLoad(pool *Pool, cpuInfo *numa.Info) {
 	load1 := pool.IdleLoad0 / pool.IdleLoadFull0
 	load1 *= 100
 	pool.IdleLoad1 = load1
+
+	if load1 >= idleOverwork {
+		log.Warningf("calcIdlePoolLoad, idle_overwork is high %.2f >= %.2f %%", load1, idleOverwork)
+		ctx.state.Errors.IdleOverwork = fmt.Errorf("idle_overwork %.2f is greater than %.2f %%", load1, idleOverwork)
+	}
 }

@@ -211,6 +211,7 @@ func getErrors(ctx *Context) *http_api.Errors {
 		PinNotInFilterToIdle: getErrorStr(errs0.PinNotInFilterToIdle),
 		StatePinIdle:         getErrorStr(errs0.StatePinIdle),
 		StatePinLoad:         getErrorStr(errs0.StatePinLoad),
+		IdleOverwork:         getErrorStr(errs0.IdleOverwork),
 	}
 	errs.RequiredCPU.Total = errs0.RequiredCPU.Total
 	errs.RequiredCPU.PerProcess = core_utils.CopyIntSlice(errs0.RequiredCPU.PerProcess)

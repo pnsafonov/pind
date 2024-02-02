@@ -71,6 +71,7 @@ type Errors struct {
 	PinNotInFilterToIdle string      `json:"pin_not_in_filter_to_idle"`
 	StatePinIdle         string      `json:"state_pin_idle"`
 	StatePinLoad         string      `json:"state_pin_load"`
+	IdleOverwork         string      `json:"idle_overwork"`
 	RequiredCPU          RequiredCPU `json:"required_cpu"`
 }
 

@@ -12,6 +12,7 @@ log:
 service:
     interval: 1000
     threshold: 150
+    idle_overwork: 80
     filters0:
         - type: name
           patterns:

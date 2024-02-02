@@ -39,6 +39,7 @@ type Rotator struct {
 type Service struct {
 	Interval     int           `yaml:"interval"` // ms
 	Threshold    float64       `yaml:"threshold"`
+	IdleOverwork float64       `yaml:"idle_overwork"`
 	Filters0     []*ProcFilter `yaml:"filters0"`
 	Filters1     []*ProcFilter `yaml:"filters1"`
 	Pool         Pool          `yaml:"pool"`
@@ -156,6 +157,7 @@ func NewDefaultConfig() *Config {
 	service := &Service{
 		Interval:     1000,
 		Threshold:    150,
+		IdleOverwork: 80,
 		Filters0:     filters0,
 		Filters1:     filters1,
 		Pool:         pool,

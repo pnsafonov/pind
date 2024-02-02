@@ -56,6 +56,7 @@ type Errors struct {
 	PinNotInFilterToIdle error
 	StatePinIdle         error
 	StatePinLoad         error
+	IdleOverwork         error
 	RequiredCPU          RequiredCPU
 }
 
@@ -551,6 +552,7 @@ func (x *Errors) clear() {
 	x.PinNotInFilterToIdle = nil
 	x.StatePinIdle = nil
 	x.StatePinLoad = nil
+	x.IdleOverwork = nil
 	x.RequiredCPU.Total = 0
 	x.RequiredCPU.PerProcess = x.RequiredCPU.PerProcess[:0]
 }
