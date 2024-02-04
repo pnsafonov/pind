@@ -34,6 +34,7 @@ func (x *HttpApi) GoServe() error {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", x.getApiState)
 	mux.HandleFunc("/api/state", x.getApiState)
 	x.Server = &http.Server{
 		Handler: mux,
