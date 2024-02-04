@@ -66,5 +66,8 @@ func (x *HttpApi) serve(l net.Listener) {
 
 // getApiState - /api/state
 func (x *HttpApi) getApiState(w http.ResponseWriter, r *http.Request) {
+	header := w.Header()
+	header.Set("Content-Type", "application/json; charset=utf-8")
+
 	_, _ = w.Write(x.stateBytes)
 }
