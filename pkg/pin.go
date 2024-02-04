@@ -7,6 +7,7 @@ import (
 	"golang.org/x/sys/unix"
 	"pind/pkg/numa"
 	"pind/pkg/utils/core_utils"
+	"sort"
 )
 
 type ThreadSelection int
@@ -487,6 +488,9 @@ func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
 	//}
 	if assignedCount > 0 {
 		x.CpuSet = numa.CpusToMask(x.Cpus)
+		sort.Slice(x.Cpus, func(i, j int) bool {
+			return x.Cpus[i] < x.Cpus[j]
+		})
 	}
 	return assignedCount
 }
