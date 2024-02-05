@@ -377,7 +377,8 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		if node == nil {
 			node0, ok := pool.getNumaNodeForLoadAssign(cpuCount)
 			if !ok {
-				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCount = %d", cpuCount)
+				vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
+				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCount = %d, vmName = %s", cpuCount, vmName)
 				errs.RequiredCPU.addCpuCount(cpuCount)
 				continue
 			}
