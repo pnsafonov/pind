@@ -245,7 +245,7 @@ func parseVmName(cmd []string) (string, bool) {
 
 				// guest=deb-3,debug-threads=on
 				for j := 0; j < l1; j++ {
-					str1 := spli1[j]
+					str1 := strings.TrimSpace(spli1[j])
 					if strings.Contains(str1, "=") {
 						split2 := strings.Split(str1, "=")
 						l2 := len(split2)
