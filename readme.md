@@ -36,3 +36,8 @@ To run go tests:
 cd pind
 go test ./...
 ```
+
+## Документация
+* [Описание](docs/description.md)
+* [Конфигурационный файл](docs/pind.yml)
+* [Ошибки в логах](docs/errors.md)
