@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"pind/pkg/config"
 )
 
 func PrintProcs1(patterns []string) error {

@@ -2,10 +2,10 @@ package http_api
 
 import (
 	"encoding/json"
+	"github.com/pnsafonov/pind/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
-	"pind/pkg/config"
 )
 
 type HttpApi struct {

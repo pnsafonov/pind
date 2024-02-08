@@ -1,10 +1,10 @@
 package pkg
 
 import (
+	"github.com/pnsafonov/pind/pkg/config"
+	"github.com/pnsafonov/pind/pkg/http_api"
+	"github.com/pnsafonov/pind/pkg/numa"
 	log "github.com/sirupsen/logrus"
-	"pind/pkg/config"
-	"pind/pkg/http_api"
-	"pind/pkg/numa"
 )
 
 const (

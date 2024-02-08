@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"pind/pkg/numa"
+	"github.com/pnsafonov/pind/pkg/numa"
 	"testing"
 )
 

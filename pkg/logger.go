@@ -1,11 +1,11 @@
 package pkg
 
 import (
+	"github.com/pnsafonov/pind/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
-	"pind/pkg/config"
 )
 
 var (

@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"fmt"
-	"pind/pkg/http_api"
-	"pind/pkg/utils/core_utils"
-	"pind/pkg/utils/math_utils"
+	"github.com/pnsafonov/pind/pkg/http_api"
+	"github.com/pnsafonov/pind/pkg/utils/core_utils"
+	"github.com/pnsafonov/pind/pkg/utils/math_utils"
 	"sort"
 	"time"
 )

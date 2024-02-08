@@ -1,4 +1,4 @@
-module pind
+module github.com/pnsafonov/pind
 
 go 1.19
 

@@ -2,11 +2,11 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg/numa"
+	"github.com/pnsafonov/pind/pkg/utils/core_utils"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"pind/pkg/numa"
-	"pind/pkg/utils/core_utils"
 	"sort"
 )
 

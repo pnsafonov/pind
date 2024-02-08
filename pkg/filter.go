@@ -1,10 +1,10 @@
 package pkg
 
 import (
+	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"pind/pkg/config"
 	"sort"
 	"strings"
 	"time"

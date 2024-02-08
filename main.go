@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg"
+	"github.com/pnsafonov/pind/pkg/numa"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"pind/pkg"
-	"pind/pkg/numa"
 	"strings"
 )
 

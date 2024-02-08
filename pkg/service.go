@@ -2,12 +2,12 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg/config"
+	"github.com/pnsafonov/pind/pkg/http_api"
+	"github.com/pnsafonov/pind/pkg/numa"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
-	"pind/pkg/config"
-	"pind/pkg/http_api"
-	"pind/pkg/numa"
 	"syscall"
 	"time"
 )
