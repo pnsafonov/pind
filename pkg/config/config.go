@@ -14,6 +14,13 @@ const (
 	IgnoreTypeName         = "name"
 )
 
+const (
+	EvictImmediately = EvictMode(0)
+	EvictDelayed     = EvictMode(1)
+)
+
+type EvictMode int
+
 type Config struct {
 	Log     *Log     `yaml:"log"`
 	Service *Service `yaml:"service"`
@@ -52,6 +59,7 @@ type Service struct {
 type Pool struct {
 	Idle Intervals
 	Load Intervals
+	Mode EvictMode
 }
 
 type ProcFilter struct {

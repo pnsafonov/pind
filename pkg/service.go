@@ -183,7 +183,7 @@ func handler(ctx *Context, time0 time.Time) {
 		errs.PinNotInFilterToIdle = err1
 	}
 
-	err2 := ctx.state.PinIdle()
+	err2 := ctx.state.PinIdle(ctx)
 	if err2 != nil {
 		log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
 		errs.StatePinIdle = err2

@@ -26,7 +26,13 @@ type PoolNodeInfo struct {
 	Index    int
 	Node     *numa.NodeInfo
 	LoadFree map[int]byte
-	LoadUsed map[int]byte
+	LoadUsed map[int]*PoolCore
+}
+
+// PoolCore - information about core pinned or free
+type PoolCore struct {
+	Evict bool     // not loaded, is ready for evict
+	Proc  *PinProc // core is pinned to process
 }
 
 func NewPoolNodes(nodes []*numa.NodeInfo, config0 config.Pool) []*PoolNodeInfo {
@@ -39,7 +45,7 @@ func NewPoolNodes(nodes []*numa.NodeInfo, config0 config.Pool) []*PoolNodeInfo {
 			Index:    node.Index,
 			Node:     node,
 			LoadFree: free,
-			LoadUsed: make(map[int]byte),
+			LoadUsed: make(map[int]*PoolCore),
 		}
 		poolNodes = append(poolNodes, poolNode)
 
@@ -82,7 +88,9 @@ func NewPool(config0 config.Pool) (*Pool, error) {
 }
 
 // getNumaNodeForLoadAssign - search for numa node changing starting node
+// for config.EvictImmediately
 func (x *Pool) getNumaNodeForLoadAssign(requiredCount int) (*PoolNodeInfo, bool) {
+	evictMode := x.Config.Mode
 	l0 := len(x.Nodes)
 	var freeNode *PoolNodeInfo
 	counter := 0
@@ -96,7 +104,8 @@ func (x *Pool) getNumaNodeForLoadAssign(requiredCount int) (*PoolNodeInfo, bool)
 		}
 
 		node := x.Nodes[i]
-		freeCount := len(node.LoadFree)
+		//freeCount := len(node.LoadFree)
+		freeCount := node.getFreeCount(evictMode)
 		if freeCount >= requiredCount {
 			freeNode = node
 			i++
@@ -121,11 +130,11 @@ func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
 			continue
 		}
 		if thread.Selected == ThreadSelectionNo {
-			count += thread.Cpus.AssignRequiredCores1(node, noSelected, &proc.NotSelected)
+			count += thread.Cpus.AssignRequiredCores1(ctx, node, noSelected, &proc.NotSelected, proc)
 			continue
 		}
 		if thread.Selected == ThreadSelectionYes {
-			count += thread.Cpus.AssignRequiredCores0(node, selected)
+			count += thread.Cpus.AssignRequiredCores0(ctx, node, selected, proc)
 			continue
 		}
 		log.Warningf("PoolNodeInfo assignCores, execution must not be here!")
@@ -134,10 +143,13 @@ func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
 }
 
 // getFreeCore - returns free core
-func (x *PoolNodeInfo) getFreeCore() (int, bool) {
+func (x *PoolNodeInfo) getFreeCore(proc *PinProc) (int, bool) {
 	for cpu, _ := range x.LoadFree {
 		delete(x.LoadFree, cpu)
-		x.LoadUsed[cpu] = 1
+		x.LoadUsed[cpu] = &PoolCore{
+			Evict: false,
+			Proc:  proc,
+		}
 		return cpu, true
 	}
 	return -1, false
@@ -157,7 +169,34 @@ func (x *PoolNodeInfo) freeCore(core int) bool {
 	return true
 }
 
-func mapIntToSlice(map0 map[int]byte) []int {
+// markCoreForEvict - mark core for delayed evict
+func (x *PoolNodeInfo) markCoreForEvict(core int, proc *PinProc) bool {
+	poolCore, ok := x.LoadUsed[core]
+	if !ok {
+		return false
+	}
+
+	poolCore.Evict = true
+	poolCore.Proc = proc
+	return true
+}
+
+func mapIntToSlice(map0 map[int]*PoolCore) []int {
+	l0 := len(map0)
+	var sl0 []int
+	if l0 > 0 {
+		sl0 = make([]int, 0, l0)
+		for key, _ := range map0 {
+			sl0 = append(sl0, key)
+		}
+		sort.Slice(sl0, func(i, j int) bool {
+			return sl0[i] < sl0[j]
+		})
+	}
+	return sl0
+}
+
+func mapIntToSlice0(map0 map[int]byte) []int {
 	l0 := len(map0)
 	var sl0 []int
 	if l0 > 0 {
@@ -177,7 +216,37 @@ func (x *PoolNodeInfo) getLoadUsedSlice() []int {
 }
 
 func (x *PoolNodeInfo) getLoadFreeSlice() []int {
-	return mapIntToSlice(x.LoadFree)
+	return mapIntToSlice0(x.LoadFree)
+}
+
+// getFreeCount - get free cores count
+func (x *PoolNodeInfo) getFreeCount(mode config.EvictMode) int {
+	count0 := len(x.LoadFree)
+	if mode == config.EvictImmediately {
+		return count0
+	}
+
+	// config.EvictDelayed
+	count1 := 0
+	for _, pinCpu := range x.LoadUsed {
+		if pinCpu.Evict {
+			count1++
+		}
+	}
+	return count0 + count1
+}
+
+func (x *PoolNodeInfo) getProcForEvict() (*PinProc, bool) {
+	for _, pinCpu := range x.LoadUsed {
+		if pinCpu.Evict {
+			if pinCpu.Proc != nil {
+				log.Errorf("getProcForEvict, pinCpu.Proc is nil")
+				continue
+			}
+			return pinCpu.Proc, true
+		}
+	}
+	return nil, false
 }
 
 // isMasksEqual - if masks are equal

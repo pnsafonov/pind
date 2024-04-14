@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/pnsafonov/pind/pkg/utils/core_utils"
 	"github.com/prometheus/procfs"
@@ -46,6 +47,8 @@ type PinThread struct {
 	Selected ThreadSelection // is thread selected
 }
 
+// PinCpus - pinned cores state
+// Состояние привязки ядер процессора
 type PinCpus struct {
 	Cpus   []int       // must be assigned, same as CpuSet
 	CpuSet unix.CPUSet // must be assigned, same as Cpus
@@ -180,6 +183,27 @@ func freeThreadCpus0(proc *PinProc, thread *PinThread) int {
 	return count
 }
 
+func markThreadForEvict(proc *PinProc, thread *PinThread) int {
+	node := proc.Node
+	if node == nil {
+		thread.Cpus.Zero()
+		return 0
+	}
+
+	count := 0
+	l0 := len(thread.Cpus.Cpus)
+	for i := 0; i < l0; i++ {
+		cpu := thread.Cpus.Cpus[i]
+		result := node.markCoreForEvict(cpu, proc)
+		if result {
+			count++
+		}
+		log.Debugf("markThreadForEvict pid = %d, comm = %s, cpu = %d, result = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, result)
+	}
+	thread.Cpus.Zero()
+	return count
+}
+
 func getThreadByPID(threads []*ThreadInfo, pid int) (*ThreadInfo, bool) {
 	l0 := len(threads)
 	for i := 0; i < l0; i++ {
@@ -271,10 +295,12 @@ func (x *PinProc) ContainsNotSelectedThread() bool {
 	return x.ContainsThread(ThreadSelectionNo)
 }
 
+// getRequiredCpuCount - calculate required cpu count for process
 func (x *PinProc) getRequiredCpuCount(ctx *Context) int {
 	requiredNotSelected := ctx.Config.Service.PinCoresAlgo.NotSelected
 	requiredSelected := ctx.Config.Service.PinCoresAlgo.Selected
 
+	// not selected threads share cpu
 	notSelected := 0
 	if x.ContainsNotSelectedThread() {
 		notSelected = x.NotSelected.getRequiredCpuCount(requiredNotSelected)
@@ -283,11 +309,14 @@ func (x *PinProc) getRequiredCpuCount(ctx *Context) int {
 	selected := 0
 	for _, thread := range x.Threads {
 		if thread.ThreadInfo.Ignored {
+			// skip ignored thread
 			continue
 		}
 		if thread.Selected != ThreadSelectionYes {
 			continue
 		}
+		// only selected threads here
+		// count cpu per thread
 		selected0 := thread.Cpus.getRequiredCpuCount(requiredSelected)
 		selected += selected0
 	}
@@ -300,38 +329,64 @@ func (x *PinThread) UpdateThread(thread *ThreadInfo) {
 	x.ThreadInfo = thread
 }
 
-func (x *PinState) PinIdle() error {
+func (x *PinState) PinIdle(ctx *Context) error {
 	var err error
 	state := x
 
 	for _, procInfo := range state.Procs {
-		if procInfo.ProcInfo.load {
+		err0 := pinProcToIdle(ctx, procInfo)
+		if err0 != nil {
+			err = err0
+		}
+	}
+
+	return err
+}
+
+// pinProcToIdle - pin process to idle cores
+// free load cores
+func pinProcToIdle(ctx *Context, procInfo *PinProc) error {
+	evictMode := ctx.Config.Service.Pool.Mode
+	return pinProcToIdle0(ctx, procInfo, evictMode)
+}
+
+// pinProcToIdle0 - pin process to idle cores with evictMode
+// free load cores
+func pinProcToIdle0(ctx *Context, procInfo *PinProc, evictMode config.EvictMode) error {
+	var err error
+	state := ctx.state
+
+	if procInfo.ProcInfo.load {
+		return nil
+	}
+
+	for _, thread := range procInfo.Threads {
+		if thread.Cpus.IsAnyInited() {
+			if evictMode == config.EvictImmediately {
+				freeThreadCpus0(procInfo, thread)
+			}
+			if evictMode == config.EvictDelayed {
+				markThreadForEvict(procInfo, thread)
+			}
+		}
+
+		if thread.ThreadInfo.Ignored {
 			continue
 		}
 
-		for _, thread := range procInfo.Threads {
-			if thread.Cpus.IsAnyInited() {
-				freeThreadCpus0(procInfo, thread)
-			}
-
-			if thread.ThreadInfo.Ignored {
-				continue
-			}
-
-			if isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet) {
-				continue
-			}
-
-			err0 := schedSetAffinity(thread.ThreadInfo.Stat, &state.Idle.CpuSet)
-			if err0 != nil {
-				err = err0
-			}
+		if isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet) {
+			continue
 		}
 
-		if procInfo.NotSelected.IsAnyInited() {
-			// is not used in idle
-			procInfo.NotSelected.Zero()
+		err0 := schedSetAffinity(thread.ThreadInfo.Stat, &state.Idle.CpuSet)
+		if err0 != nil {
+			err = err0
 		}
+	}
+
+	if procInfo.NotSelected.IsAnyInited() {
+		// is not used in idle
+		procInfo.NotSelected.Zero()
 	}
 
 	return err
@@ -344,6 +399,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 	patterns := ctx.Config.Service.Selection.Patterns
 	//algo := ctx.Config.Service.PinCoresAlgo
 	pool := ctx.pool
+	//evictMode := ctx.Config.Service.Pool.Mode
 
 	// update selection
 	for _, procInfo := range state.Procs {
@@ -368,6 +424,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			continue
 		}
 
+		// calculate required cpu count for all threads of process
 		cpuCount := procInfo.getRequiredCpuCount(ctx)
 		if cpuCount <= 0 {
 			continue
@@ -375,6 +432,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 
 		node := procInfo.Node
 		if node == nil {
+			// search numa node with cpu capacity count
 			node0, ok := pool.getNumaNodeForLoadAssign(cpuCount)
 			if !ok {
 				vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
@@ -463,6 +521,7 @@ func (x *PinCpus) IsInited(count int) bool {
 	return l0 >= count
 }
 
+// getRequiredCpuCount - calc required cpu
 func (x *PinCpus) getRequiredCpuCount(requiredCount int) int {
 	l0 := len(x.Cpus)
 	if l0 >= requiredCount {
@@ -471,16 +530,38 @@ func (x *PinCpus) getRequiredCpuCount(requiredCount int) int {
 	return requiredCount - l0
 }
 
-func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
+func (x *PinCpus) AssignRequiredCores0(ctx *Context, node *PoolNodeInfo, count int, proc *PinProc) int {
+	evictMode := ctx.Config.Service.Pool.Mode
+
 	requiredCount := x.getRequiredCpuCount(count)
 	if requiredCount <= 0 {
 		return 0
 	}
 	assignedCount := 0
 	for ; assignedCount < requiredCount; assignedCount++ {
-		cpu, ok := node.getFreeCore()
+		cpu, ok := node.getFreeCore(proc)
 		if !ok {
-			break
+			if evictMode == config.EvictImmediately {
+				break
+			}
+			if evictMode == config.EvictDelayed {
+				procEvict, ok0 := node.getProcForEvict()
+				if !ok0 {
+					log.Warningf("AssignRequiredCores0, node.getProcForEvict failed")
+					break
+				}
+				// free cores
+				err := pinProcToIdle0(ctx, procEvict, config.EvictImmediately)
+				if err != nil {
+					log.Errorf("AssignRequiredCores0, pinProcToIdle0 err = %v", err)
+					break
+				}
+				// attempt to get free cores after evict
+				cpu, ok = node.getFreeCore(proc)
+				if !ok {
+					break
+				}
+			}
 		}
 		x.Cpus = append(x.Cpus, cpu)
 	}
@@ -497,8 +578,8 @@ func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
 }
 
 // AssignRequiredCores1 - use shared cores, for not selected threads
-func (x *PinCpus) AssignRequiredCores1(node *PoolNodeInfo, count int, shared *PinCpus) int {
-	count0 := shared.AssignRequiredCores0(node, count)
+func (x *PinCpus) AssignRequiredCores1(ctx *Context, node *PoolNodeInfo, count int, shared *PinCpus, proc *PinProc) int {
+	count0 := shared.AssignRequiredCores0(ctx, node, count, proc)
 
 	if !isMasksEqual(x.CpuSet, shared.CpuSet) {
 		x.assignAsCopy(shared)
