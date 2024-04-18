@@ -36,6 +36,10 @@ func doMain(args []string) {
 			{
 				printNuma()
 			}
+		case "--print-topology":
+			{
+				printTopology()
+			}
 		case "--print-procs":
 			{
 				patterns := ""
@@ -98,6 +102,7 @@ pin programs to CPU (affinity)
 
       --print-procs "pattern0,pattern1"       print process filtered by ps aux | grep pattern0 | grep pattern1 
       --print-numa                            print information about numa and exit
+      --print-topology                        print information about cpu's topology
       --print-conf                            print config file content`
 
 	fmt.Println(helpMsg)
@@ -112,6 +117,11 @@ func printVersion() {
 
 func printNuma() {
 	err := numa.PrintNuma0()
+	exit0(err)
+}
+
+func printTopology() {
+	err := numa.PrintTopology()
 	exit0(err)
 }
 

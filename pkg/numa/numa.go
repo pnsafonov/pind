@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lrita/numa"
 	"github.com/prometheus/procfs"
+	"github.com/prometheus/procfs/sysfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
@@ -16,6 +17,8 @@ var (
 	procfs0             procfs.FS
 	ErrNumaNodeNotFound = fmt.Errorf("numa_node_not_found")
 	ErrNotSameNumaNodes = fmt.Errorf("not_same_numa_nodes")
+
+	sysfs0 sysfs.FS
 )
 
 func init() {
@@ -50,6 +53,15 @@ func init() {
 		return
 	}
 	procfs0 = procfs1
+
+	sysfs1, err2 := sysfs.NewDefaultFS()
+	if err2 != nil {
+		initError = err2
+		return
+	}
+	sysfs0 = sysfs1
+
+	//cpus := sysfs1.CPUs()
 }
 
 type NodeInfo struct {
