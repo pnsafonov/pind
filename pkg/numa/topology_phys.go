@@ -8,9 +8,8 @@ import (
 
 // NodePhysInfo - information about numa, physical info (topology)
 type NodePhysInfo struct {
-	CoresTopology []*CpuTopologyInfo //
-	Cores         []*PhysCore        //
-	Index         int                // numa index
+	Cores []*PhysCore //
+	Index int         // numa index
 }
 
 // PhysCore - information about physical core topology
@@ -55,7 +54,6 @@ func GetNodesPhysInfo() ([]*NodePhysInfo, error) {
 			ThreadSiblings: threadSiblings,
 		}
 		nodeInfo.Cores = append(cores, core)
-		nodeInfo.CoresTopology = infos
 	}
 
 	for _, info := range nodes0 {
