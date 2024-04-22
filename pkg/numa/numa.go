@@ -14,6 +14,7 @@ var (
 	nodeMaxId           = -1
 	nodesCount          = 0
 	nodes               []*NodeInfo
+	nodesPhys           []*NodePhysInfo
 	procfs0             procfs.FS
 	ErrNumaNodeNotFound = fmt.Errorf("numa_node_not_found")
 	ErrNotSameNumaNodes = fmt.Errorf("not_same_numa_nodes")
@@ -42,6 +43,11 @@ func init() {
 	}
 
 	sysfs0, initError = sysfs.NewDefaultFS()
+	if initError != nil {
+		return
+	}
+
+	nodesPhys, initError = GetNodesPhysInfo()
 }
 
 func initNodes(nodesCount int) ([]*NodeInfo, error) {
@@ -104,14 +110,13 @@ func checkInitError() error {
 }
 
 func PrintNuma0() error {
-	err := checkInitError()
+	nodes0, err := GetNodes()
 	if err != nil {
 		return err
 	}
-
-	l0 := len(nodes)
+	l0 := len(nodes0)
 	for i := 0; i < l0; i++ {
-		ni := nodes[i]
+		ni := nodes0[i]
 		_, _ = fmt.Printf("numa %d\n", ni.Index)
 
 		l1 := len(ni.Mask)
@@ -129,12 +134,38 @@ func PrintNuma0() error {
 	return nil
 }
 
+func PrintNumaPhys0() error {
+	nodes0, err := GetNodesPhys()
+	if err != nil {
+		return err
+	}
+	l0 := len(nodes0)
+	for i := 0; i < l0; i++ {
+		ni := nodes0[i]
+		_, _ = fmt.Printf("numa %d\n", ni.Index)
+
+		l1 := len(ni.Cores)
+		for j := 0; j < l1; j++ {
+			core := ni.Cores[j]
+			_, _ = fmt.Printf("phys core %d, siblings = %v\n", core.Id, core.ThreadSiblings)
+		}
+	}
+	return nil
+}
+
 // GetNodes - get information about NUMA
 func GetNodes() ([]*NodeInfo, error) {
 	if initError != nil {
 		return nil, initError
 	}
 	return nodes, nil
+}
+
+func GetNodesPhys() ([]*NodePhysInfo, error) {
+	if initError != nil {
+		return nil, initError
+	}
+	return nodesPhys, nil
 }
 
 func NodesToFullMask(nodes []*NodeInfo) unix.CPUSet {
