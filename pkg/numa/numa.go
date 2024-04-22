@@ -31,37 +31,34 @@ func init() {
 	nodeMaxId = numa.MaxNodeID()
 	nodesCount = nodeMaxId + 1
 
-	nodes = make([]*NodeInfo, 0, nodesCount)
+	nodes, initError = initNodes(nodesCount)
+	if initError != nil {
+		return
+	}
+
+	procfs0, initError = procfs.NewDefaultFS()
+	if initError != nil {
+		return
+	}
+
+	sysfs0, initError = sysfs.NewDefaultFS()
+}
+
+func initNodes(nodesCount int) ([]*NodeInfo, error) {
+	result := make([]*NodeInfo, 0, nodesCount)
 	for i := 0; i < nodesCount; i++ {
-		mask0, err0 := numa.NodeToCPUMask(i)
-		if err0 != nil {
-			initError = err0
-			return
+		mask0, err := numa.NodeToCPUMask(i)
+		if err != nil {
+			return nil, err
 		}
-		ni, err0 := maskToNodeInfo(mask0)
-		if err0 != nil {
-			initError = err0
-			return
+		ni, err := maskToNodeInfo(mask0)
+		if err != nil {
+			return nil, err
 		}
 		ni.Index = i
 		nodes = append(nodes, ni)
 	}
-
-	procfs1, err1 := procfs.NewDefaultFS()
-	if err1 != nil {
-		initError = err1
-		return
-	}
-	procfs0 = procfs1
-
-	sysfs1, err2 := sysfs.NewDefaultFS()
-	if err2 != nil {
-		initError = err2
-		return
-	}
-	sysfs0 = sysfs1
-
-	//cpus := sysfs1.CPUs()
+	return result, nil
 }
 
 type NodeInfo struct {
