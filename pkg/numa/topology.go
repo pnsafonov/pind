@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"github.com/prometheus/procfs/sysfs"
 	log "github.com/sirupsen/logrus"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 type CpuTopologyInfo struct {
 	Cpu         sysfs.CPU
-	Number      string
+	CpuNumber   string
+	Number      int                // like CpuNumber, but int
 	CpuTopology *sysfs.CPUTopology // text
 	Topology    *Topology
 }
@@ -35,7 +37,7 @@ func PrintTopology() error {
 		info := infos[i]
 		tpg := info.CpuTopology
 		fmt.Printf("num=%s, coreId=%s, core_siblings=%s; phys=%s, thread_siblings=%s\n",
-			info.Number, tpg.CoreID, tpg.CoreSiblingsList, tpg.PhysicalPackageID,
+			info.CpuNumber, tpg.CoreID, tpg.CoreSiblingsList, tpg.PhysicalPackageID,
 			tpg.ThreadSiblingsList)
 	}
 	return nil
@@ -49,7 +51,7 @@ func GetCpuTopologyInfo() ([]*CpuTopologyInfo, error) {
 
 	cpus0, err := sysfs0.CPUs()
 	if err != nil {
-		log.Errorf("PrintTopology, sysfs0.CPUs err = %v", err)
+		log.Errorf("GetCpuTopologyInfo, sysfs0.CPUs err = %v", err)
 		return nil, err
 	}
 
@@ -57,20 +59,27 @@ func GetCpuTopologyInfo() ([]*CpuTopologyInfo, error) {
 	infos := make([]*CpuTopologyInfo, 0, l0)
 	for i := 0; i < l0; i++ {
 		cpu0 := cpus0[i]
-		number := cpu0.Number()
+		cpuNumber := cpu0.Number()
 		cpuTopology, err := cpu0.Topology()
 		if err != nil {
-			log.Errorf("PrintTopology, cpu0.Topology err = %v", err)
+			log.Errorf("GetCpuTopologyInfo, cpu0.Topology err = %v", err)
+			return nil, err
+		}
+
+		number, err := strconv.Atoi(cpuNumber)
+		if err != nil {
+			log.Errorf("GetCpuTopologyInfo, strconv.Atoi(cpuNumber) err = %v, cpuNumber = %s", err, cpuNumber)
 			return nil, err
 		}
 
 		topology, err := newTopology(cpuTopology)
 		if err != nil {
-			log.Errorf("PrintTopology, newTopology err = %v", err)
+			log.Errorf("GetCpuTopologyInfo, newTopology err = %v", err)
 			return nil, err
 		}
 
 		ti := &CpuTopologyInfo{
+			CpuNumber:   cpuNumber,
 			Number:      number,
 			Cpu:         cpu0,
 			CpuTopology: cpuTopology,
@@ -78,6 +87,11 @@ func GetCpuTopologyInfo() ([]*CpuTopologyInfo, error) {
 		}
 		infos = append(infos, ti)
 	}
+
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].Number < infos[j].Number
+	})
+
 	return infos, nil
 }
 
