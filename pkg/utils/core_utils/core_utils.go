@@ -6,3 +6,17 @@ func CopyIntSlice(slice []int) []int {
 	copy(sl0s, slice)
 	return sl0s
 }
+
+func IsIntSliceEqual(left []int, right []int) bool {
+	l0 := len(left)
+	l1 := len(right)
+	if l0 != l1 {
+		return false
+	}
+	for i := 0; i < l0; i++ {
+		if left[i] != right[i] {
+			return false
+		}
+	}
+	return true
+}

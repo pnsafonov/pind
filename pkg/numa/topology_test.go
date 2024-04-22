@@ -61,3 +61,11 @@ func TestParseIntList0(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPhysTopology0(t *testing.T) {
+	physCpu, err := GetPhysTopology()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = physCpu
+}

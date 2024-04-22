@@ -171,6 +171,9 @@ func newTopology(cpuTopology *sysfs.CPUTopology) (*Topology, error) {
 		log.Errorf("newTopology, parseIntList(cpuTopology.ThreadSiblingsList) err = %v", err)
 		return nil, err
 	}
+	sort.Slice(threadSiblingsList, func(i, j int) bool {
+		return threadSiblingsList[i] < threadSiblingsList[j]
+	})
 
 	topology := &Topology{
 		CoreID:             coreID,
