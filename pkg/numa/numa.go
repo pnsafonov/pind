@@ -63,8 +63,8 @@ func initNodes(nodesCount int) ([]*NodeInfo, error) {
 
 type NodeInfo struct {
 	Mask  []uint64 // Bitmask, CPUSet, unix.CPUSet
-	Cpus  []int
-	Index int
+	Cpus  []int    //
+	Index int      // numa index
 }
 
 func maskToNodeInfo(mask []uint64) (*NodeInfo, error) {

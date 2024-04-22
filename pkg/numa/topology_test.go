@@ -62,10 +62,10 @@ func TestParseIntList0(t *testing.T) {
 	}
 }
 
-func TestGetPhysTopology0(t *testing.T) {
-	physCpu, err := GetPhysTopology()
+func TestGetNodesPhysInfo0(t *testing.T) {
+	physInfos, err := GetNodesPhysInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = physCpu
+	_ = physInfos
 }
