@@ -170,9 +170,9 @@ func freeThreadCpus0(proc *PinProc, thread *PinThread) int {
 	l0 := len(thread.Cpus.Cpus)
 	for i := 0; i < l0; i++ {
 		cpu := thread.Cpus.Cpus[i]
-		result := node.freeCore(cpu)
+		count0, result := node.freeCore(cpu)
 		if result {
-			count++
+			count += count0
 		}
 		log.Debugf("freeThreadCpus pid = %d, comm = %s, cpu = %d, result = %v", thread.ThreadInfo.Stat.PID, thread.ThreadInfo.Stat.Comm, cpu, result)
 	}

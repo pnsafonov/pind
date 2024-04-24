@@ -215,37 +215,39 @@ func (x *PoolNodeInfo) getFreeCorePhys(physCore int) (int, int, bool) {
 }
 
 // freeCore - change core state from used to free
-func (x *PoolNodeInfo) freeCore(core int) bool {
+func (x *PoolNodeInfo) freeCore(core int) (int, bool) {
 	if x.Config.LoadType == config.Phys {
 		return x.freeCorePhys(core)
 	}
 	return x.freeCoreLogical(core)
 }
 
-func (x *PoolNodeInfo) freeCoreLogical(core int) bool {
+func (x *PoolNodeInfo) freeCoreLogical(core int) (int, bool) {
 	poolCore, ok := x.LoadUsed[core]
 	if !ok {
 		// core not exits in this numa!
 		// or not used
-		return false
+		return 0, false
 	}
 
 	delete(x.LoadUsed, core)
 	x.LoadFree[core] = poolCore
-	return true
+	return 1, true
 }
 
-func (x *PoolNodeInfo) freeCorePhys(core int) bool {
-	for physCore, poolCore := range x.LoadFree {
+func (x *PoolNodeInfo) freeCorePhys(core int) (int, bool) {
+	for physCore, poolCore := range x.LoadUsed {
 		for _, cpu := range poolCore.Used {
 			if cpu == core {
 				delete(x.LoadUsed, physCore)
 				x.LoadFree[physCore] = poolCore
-				return true
+				count := len(poolCore.Used)
+				poolCore.Used = poolCore.Used[0:0]
+				return count, true
 			}
 		}
 	}
-	return false
+	return 0, false
 }
 
 func mapIntToSlice(map0 map[int]*PoolCore) []int {
