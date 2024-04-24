@@ -27,11 +27,11 @@ service:
         - type: name
           patterns:
               # all patterns must be selected
-              - deb-2
+              - deb-0
         - type: name
           patterns:
               # all patterns must be selected
-              - deb-3
+              - deb-1
     pool:
         idle: 0-1
         load: 2-5

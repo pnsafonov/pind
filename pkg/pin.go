@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/pnsafonov/pind/pkg/utils/core_utils"
+	"github.com/pnsafonov/pind/pkg/utils/math_utils"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -271,15 +272,19 @@ func (x *PinProc) ContainsNotSelectedThread() bool {
 	return x.ContainsThread(ThreadSelectionNo)
 }
 
-func (x *PinProc) getRequiredCpuCount(ctx *Context) int {
+// getRequiredCpuCount - returns phys count, logical count
+func (x *PinProc) getRequiredCpuCount(ctx *Context) (int, int) {
 	requiredNotSelected := ctx.Config.Service.PinCoresAlgo.NotSelected
 	requiredSelected := ctx.Config.Service.PinCoresAlgo.Selected
 
+	notSelectedPhys := 0
 	notSelected := 0
 	if x.ContainsNotSelectedThread() {
 		notSelected = x.NotSelected.getRequiredCpuCount(requiredNotSelected)
+		notSelectedPhys = math_utils.IntDivide2Ceil(notSelected)
 	}
 
+	selectedPhys := 0
 	selected := 0
 	for _, thread := range x.Threads {
 		if thread.ThreadInfo.Ignored {
@@ -289,10 +294,12 @@ func (x *PinProc) getRequiredCpuCount(ctx *Context) int {
 			continue
 		}
 		selected0 := thread.Cpus.getRequiredCpuCount(requiredSelected)
+		selectedPhys0 := math_utils.IntDivide2Ceil(selected0)
 		selected += selected0
+		selectedPhys += selectedPhys0
 	}
 
-	return notSelected + selected
+	return notSelectedPhys + selectedPhys, notSelected + selected
 }
 
 // UpdateThread - set actual information abount thread
@@ -368,17 +375,17 @@ func (x *PinState) PinLoad(ctx *Context) error {
 			continue
 		}
 
-		cpuCount := procInfo.getRequiredCpuCount(ctx)
+		cpuCountPhys, cpuCount := procInfo.getRequiredCpuCount(ctx)
 		if cpuCount <= 0 {
 			continue
 		}
 
 		node := procInfo.Node
 		if node == nil {
-			node0, ok := pool.getNumaNodeForLoadAssign(cpuCount)
+			node0, ok := pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount)
 			if !ok {
 				vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
-				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCount = %d, vmName = %s", cpuCount, vmName)
+				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCountPhys = %d, cpuCount = %d, vmName = %s", cpuCountPhys, cpuCount, vmName)
 				errs.RequiredCPU.addCpuCount(cpuCount)
 				continue
 			}

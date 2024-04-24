@@ -121,7 +121,14 @@ func NewPool(config0 config.Pool) (*Pool, error) {
 }
 
 // getNumaNodeForLoadAssign - search for numa node changing starting node
-func (x *Pool) getNumaNodeForLoadAssign(requiredCount int) (*PoolNodeInfo, bool) {
+func (x *Pool) getNumaNodeForLoadAssign(requiredCountPhys int, requiredCount int) (*PoolNodeInfo, bool) {
+	if x.Config.LoadType == config.Phys {
+		return x.getNumaNodeForLoadAssignPhys(requiredCountPhys, requiredCount)
+	}
+	return x.getNumaNodeForLoadAssignLogical(requiredCount)
+}
+
+func (x *Pool) getNumaNodeForLoadAssignLogical(requiredCount int) (*PoolNodeInfo, bool) {
 	l0 := len(x.Nodes)
 	var freeNode *PoolNodeInfo
 	counter := 0
@@ -147,6 +154,43 @@ func (x *Pool) getNumaNodeForLoadAssign(requiredCount int) (*PoolNodeInfo, bool)
 	}
 	x.NodeIndex = i
 	return freeNode, freeNode != nil
+}
+
+func (x *Pool) getNumaNodeForLoadAssignPhys(requiredCountPhys int, requiredCount int) (*PoolNodeInfo, bool) {
+	l0 := len(x.Nodes)
+	var freeNode *PoolNodeInfo
+	counter := 0
+	i := x.NodeIndex
+	for {
+		if i >= l0 {
+			i = 0
+		}
+		if counter >= l0 {
+			break
+		}
+
+		node := x.Nodes[i]
+		freeCountPhys := len(node.LoadFree)
+		freeCount := getAvailableCoresCount(node.LoadFree)
+		if freeCountPhys >= requiredCountPhys && freeCount >= requiredCount {
+			freeNode = node
+			i++
+			break
+		}
+
+		i++
+		counter++
+	}
+	x.NodeIndex = i
+	return freeNode, freeNode != nil
+}
+
+func getAvailableCoresCount(map0 map[int]*PoolCore) int {
+	count := 0
+	for _, core := range map0 {
+		count += len(core.Available)
+	}
+	return count
 }
 
 func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
