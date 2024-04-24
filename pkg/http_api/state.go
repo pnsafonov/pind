@@ -42,12 +42,19 @@ type Pool struct {
 	IdleLoad1 float64     `json:"idle_load1"`
 	Idle      []int       `json:"idle"`
 	Nodes     []*PoolNode `json:"numa_nodes"`
+	LoadType  string      `json:"load_type"`
 }
 
 type PoolNode struct {
-	Index    int   `json:"index"`
-	LoadFree []int `json:"load_free"`
-	LoadUsed []int `json:"load_used"`
+	Index    int         `json:"index"`
+	LoadFree []*PoolCore `json:"load_free"`
+	LoadUsed []*PoolCore `json:"load_used"`
+}
+
+type PoolCore struct {
+	Id        int   `json:"id"`
+	Available []int `json:"available,omitempty"`
+	Used      []int `json:"used,omitempty"`
 }
 
 type Load struct {

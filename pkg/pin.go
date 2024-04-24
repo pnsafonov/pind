@@ -477,8 +477,11 @@ func (x *PinCpus) AssignRequiredCores0(node *PoolNodeInfo, count int) int {
 		return 0
 	}
 	assignedCount := 0
+	physCpu := -1
+	cpu := -1
+	ok := false
 	for ; assignedCount < requiredCount; assignedCount++ {
-		cpu, ok := node.getFreeCore()
+		physCpu, cpu, ok = node.getFreeCore(physCpu)
 		if !ok {
 			break
 		}

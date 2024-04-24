@@ -20,3 +20,12 @@ func IsIntSliceEqual(left []int, right []int) bool {
 	}
 	return true
 }
+
+func IsSliceContains(sl []int, val int) bool {
+	for _, v := range sl {
+		if v == val {
+			return true
+		}
+	}
+	return false
+}

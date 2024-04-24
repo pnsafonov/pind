@@ -102,3 +102,31 @@ func IsPhysCoresContains(cores []*PhysCore, threadSiblings []int) bool {
 	}
 	return false
 }
+
+func GetPhysCoreSiblings(cpu int) []int {
+	for _, node := range nodesPhys {
+		for _, core := range node.Cores {
+			if core.Id == cpu {
+				return core.ThreadSiblings
+			}
+		}
+	}
+	return nil
+}
+
+// PhysCoresToLogical - convert physical cores to siblings
+func PhysCoresToLogical(cores []int) []int {
+	result := make([]int, 0, len(cores)*2)
+	for _, core := range cores {
+		siblings := GetPhysCoreSiblings(core)
+		for _, sibling := range siblings {
+			if !core_utils.IsSliceContains(result, sibling) {
+				result = append(result, sibling)
+			}
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
+	return result
+}

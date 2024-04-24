@@ -65,6 +65,13 @@ func loadConfigFile(ctx *Context) error {
 		return err
 	}
 
+	if config0.Service.Pool.LoadType == config.Phys {
+		// convert idle phys cores to logical
+		// then load_type: "phys"
+		logicalCores := numa.PhysCoresToLogical(config0.Service.Pool.Idle.Values)
+		config0.Service.Pool.Idle.Values = logicalCores
+	}
+
 	ctx.Config = config0
 	return nil
 }

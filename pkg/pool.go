@@ -2,7 +2,9 @@ package pkg
 
 import (
 	"github.com/pnsafonov/pind/pkg/config"
+	"github.com/pnsafonov/pind/pkg/http_api"
 	"github.com/pnsafonov/pind/pkg/numa"
+	"github.com/pnsafonov/pind/pkg/utils/core_utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 	"sort"
@@ -25,27 +27,58 @@ type Pool struct {
 type PoolNodeInfo struct {
 	Index    int
 	Node     *numa.NodeInfo
-	LoadFree map[int]byte
-	LoadUsed map[int]byte
+	NodePhys *numa.NodePhysInfo
+	LoadFree map[int]*PoolCore
+	LoadUsed map[int]*PoolCore
+	Config   config.Pool
 }
 
-func NewPoolNodes(nodes []*numa.NodeInfo, config0 config.Pool) []*PoolNodeInfo {
+// PoolCore - stores information about physical core.
+// If core is not physical, PoolCore is not used.
+type PoolCore struct {
+	Id        int   // core id
+	Available []int // Cores that can be used. Like free, but used. Once filled.
+	Used      []int // Actually used cores.
+}
+
+func NewPoolNodes(nodes []*numa.NodeInfo, nosesPhys []*numa.NodePhysInfo, config0 config.Pool) []*PoolNodeInfo {
 	l0 := len(nodes)
 	poolNodes := make([]*PoolNodeInfo, 0, l0)
 	for i := 0; i < l0; i++ {
 		node := nodes[i]
-		free := make(map[int]byte)
+		nodePhys := nosesPhys[i]
+		free := make(map[int]*PoolCore)
 		poolNode := &PoolNodeInfo{
 			Index:    node.Index,
 			Node:     node,
+			NodePhys: nodePhys,
 			LoadFree: free,
-			LoadUsed: make(map[int]byte),
+			LoadUsed: make(map[int]*PoolCore),
+			Config:   config0,
 		}
 		poolNodes = append(poolNodes, poolNode)
 
-		for _, cpu := range node.Cpus {
-			if config.IsCpuInInterval(cpu, config0.Load) {
-				free[cpu] = 1
+		if config0.LoadType == config.Phys {
+			for _, core := range nodePhys.Cores {
+				cpu := core.Id
+				if config.IsCpuInInterval(cpu, config0.Load) {
+					cpus := core_utils.CopyIntSlice(core.ThreadSiblings)
+					poolCore := &PoolCore{
+						Id:        cpu,
+						Available: cpus,
+					}
+					free[cpu] = poolCore
+				}
+			}
+
+		} else {
+			for _, cpu := range node.Cpus {
+				if config.IsCpuInInterval(cpu, config0.Load) {
+					poolCore := &PoolCore{
+						Id: cpu,
+					}
+					free[cpu] = poolCore
+				}
 			}
 		}
 	}
@@ -60,7 +93,13 @@ func NewPool(config0 config.Pool) (*Pool, error) {
 		return nil, err
 	}
 
-	poolNodes := NewPoolNodes(nodes, config0)
+	nodesPhys, err := numa.GetNodesPhys()
+	if err != nil {
+		log.Errorf("NewPool, numa.GetNodesPhys err = %v", err)
+		return nil, err
+	}
+
+	poolNodes := NewPoolNodes(nodes, nodesPhys, config0)
 
 	//fullMask := numa.NodesToFullMask(nodes)
 	//idleMask := numa.CpusToMask(config0.Idle.Values)
@@ -133,19 +172,58 @@ func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
 	return count
 }
 
+func (x *PoolNodeInfo) getFreeCore(physCore int) (int, int, bool) {
+	if x.Config.LoadType == config.Phys {
+		return x.getFreeCorePhys(physCore)
+	}
+	core, ok := x.getFreeCoreLogical()
+	return -1, core, ok
+}
+
 // getFreeCore - returns free core
-func (x *PoolNodeInfo) getFreeCore() (int, bool) {
-	for cpu, _ := range x.LoadFree {
+func (x *PoolNodeInfo) getFreeCoreLogical() (int, bool) {
+	for cpu, poolCore := range x.LoadFree {
 		delete(x.LoadFree, cpu)
-		x.LoadUsed[cpu] = 1
+		x.LoadUsed[cpu] = poolCore
 		return cpu, true
 	}
 	return -1, false
 }
 
+// getFreeCorePhys - returns phys, logical, true (is_found)
+func (x *PoolNodeInfo) getFreeCorePhys(physCore int) (int, int, bool) {
+	poolCore, ok := x.LoadUsed[physCore]
+	if ok {
+		l0 := len(poolCore.Available)
+		l1 := len(poolCore.Used)
+		if l1 < l0 {
+			core := poolCore.Available[l1]
+			poolCore.Used = append(poolCore.Used, core)
+			return physCore, core, true
+		}
+	}
+
+	for physCore0, poolCore0 := range x.LoadFree {
+		delete(x.LoadFree, physCore0)
+		x.LoadUsed[physCore0] = poolCore0
+		core := poolCore0.Available[0]
+		poolCore0.Used = append(poolCore0.Used, core)
+		return physCore0, core, true
+	}
+
+	return -1, -1, false
+}
+
 // freeCore - change core state from used to free
 func (x *PoolNodeInfo) freeCore(core int) bool {
-	_, ok := x.LoadUsed[core]
+	if x.Config.LoadType == config.Phys {
+		return x.freeCorePhys(core)
+	}
+	return x.freeCoreLogical(core)
+}
+
+func (x *PoolNodeInfo) freeCoreLogical(core int) bool {
+	poolCore, ok := x.LoadUsed[core]
 	if !ok {
 		// core not exits in this numa!
 		// or not used
@@ -153,11 +231,24 @@ func (x *PoolNodeInfo) freeCore(core int) bool {
 	}
 
 	delete(x.LoadUsed, core)
-	x.LoadFree[core] = 1
+	x.LoadFree[core] = poolCore
 	return true
 }
 
-func mapIntToSlice(map0 map[int]byte) []int {
+func (x *PoolNodeInfo) freeCorePhys(core int) bool {
+	for physCore, poolCore := range x.LoadFree {
+		for _, cpu := range poolCore.Used {
+			if cpu == core {
+				delete(x.LoadUsed, physCore)
+				x.LoadFree[physCore] = poolCore
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func mapIntToSlice(map0 map[int]*PoolCore) []int {
 	l0 := len(map0)
 	var sl0 []int
 	if l0 > 0 {
@@ -172,12 +263,12 @@ func mapIntToSlice(map0 map[int]byte) []int {
 	return sl0
 }
 
-func (x *PoolNodeInfo) getLoadUsedSlice() []int {
-	return mapIntToSlice(x.LoadUsed)
+func (x *PoolNodeInfo) getLoadUsedSlice() []*http_api.PoolCore {
+	return mapToPoolCoresList(x.LoadUsed)
 }
 
-func (x *PoolNodeInfo) getLoadFreeSlice() []int {
-	return mapIntToSlice(x.LoadFree)
+func (x *PoolNodeInfo) getLoadFreeSlice() []*http_api.PoolCore {
+	return mapToPoolCoresList(x.LoadFree)
 }
 
 // isMasksEqual - if masks are equal

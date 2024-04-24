@@ -37,6 +37,7 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 		IdleLoad0: math_utils.Round2(ctx.pool.IdleLoad0),
 		IdleLoad1: math_utils.Round2(ctx.pool.IdleLoad1),
 		Nodes:     nodes,
+		LoadType:  ctx.Config.Service.Pool.LoadType,
 	}
 	state.Pool = pool0
 
@@ -80,6 +81,23 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 	state.Errors = errs
 
 	return state
+}
+
+func mapToPoolCoresList(map0 map[int]*PoolCore) []*http_api.PoolCore {
+	l0 := len(map0)
+	result := make([]*http_api.PoolCore, 0, l0)
+	for _, poolCore := range map0 {
+		poolCore0 := &http_api.PoolCore{
+			Id:        poolCore.Id,
+			Available: core_utils.CopyIntSlice(poolCore.Available),
+			Used:      core_utils.CopyIntSlice(poolCore.Used),
+		}
+		result = append(result, poolCore0)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Id < result[j].Id
+	})
+	return result
 }
 
 func getProcTimeStr(ctx *Context) string {

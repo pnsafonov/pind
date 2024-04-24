@@ -48,6 +48,15 @@ func init() {
 	}
 
 	nodesPhys, initError = GetNodesPhysInfo()
+	if initError != nil {
+		return
+	}
+
+	l0 := len(nodes)
+	l1 := len(nodesPhys)
+	if l0 != l1 {
+		initError = fmt.Errorf("count of nodes and nodesPhys is not same, %d != %d", l0, l1)
+	}
 }
 
 func initNodes(nodesCount int) ([]*NodeInfo, error) {
@@ -62,7 +71,7 @@ func initNodes(nodesCount int) ([]*NodeInfo, error) {
 			return nil, err
 		}
 		ni.Index = i
-		nodes = append(nodes, ni)
+		result = append(result, ni)
 	}
 	return result, nil
 }

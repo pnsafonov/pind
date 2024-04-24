@@ -12,6 +12,10 @@ const (
 	SelectionTypeSingle    = "single" // core per thread
 	PinCoresAlgoTypeSingle = "single"
 	IgnoreTypeName         = "name"
+
+	// Phys - pool load type physical
+	Phys    = "phys" // pin to physical cores, ignore hyper threading
+	Logical = "logical"
 )
 
 type Config struct {
@@ -50,8 +54,9 @@ type Service struct {
 }
 
 type Pool struct {
-	Idle Intervals
-	Load Intervals
+	Idle     Intervals
+	Load     Intervals
+	LoadType string `yaml:"load_type"`
 }
 
 type ProcFilter struct {
@@ -129,6 +134,7 @@ func NewDefaultConfig() *Config {
 		Idle: Intervals{Values: []int{0, 1}},
 		Load: Intervals{Values: []int{2, 3, 4, 5}},
 		//Load: Intervals{Values: []int{2, 3, 4, 5, 6}},
+		LoadType: Logical,
 	}
 
 	selection := Selection{
