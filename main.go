@@ -91,7 +91,7 @@ func doMain(args []string) {
 	}
 
 	// default action
-	printNuma()
+	printNumaPhys()
 }
 
 func printHelp() {

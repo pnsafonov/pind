@@ -53,15 +53,7 @@ func loadConfigAndInit(ctx *Context) error {
 }
 
 func loadConfigFile(ctx *Context) error {
-	confPath := ctx.ConfigPath
-
-	if confPath == ConfPathBuiltIn {
-		ctx.Config = config.NewDefaultConfig()
-		log.Infof("use build-in config")
-		return nil
-	}
-
-	config0, err := config.Load(confPath)
+	config0, err := loadConfigFile0(ctx)
 	if err != nil {
 		log.Errorf("loadConfigFile, config.Load err = %v", err)
 		return err
@@ -75,6 +67,24 @@ func loadConfigFile(ctx *Context) error {
 
 	ctx.Config = config0
 	return nil
+}
+
+func loadConfigFile0(ctx *Context) (*config.Config, error) {
+	confPath := ctx.ConfigPath
+
+	if confPath == ConfPathBuiltIn {
+		config0 := config.NewDefaultConfig()
+		log.Infof("use build-in config")
+		return config0, nil
+	}
+
+	config0, err := config.Load(confPath)
+	if err != nil {
+		log.Errorf("loadConfigFile, config.Load err = %v", err)
+		return nil, err
+	}
+
+	return config0, nil
 }
 
 func initDefaultConfig(config0 *config.Config) error {
