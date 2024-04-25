@@ -1,9 +1,11 @@
 package pkg
 
 import (
+	"fmt"
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/http_api"
 	"github.com/pnsafonov/pind/pkg/numa"
+	"github.com/pnsafonov/pind/pkg/utils/os_utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -65,6 +67,29 @@ func loadConfigFile(ctx *Context) error {
 		return err
 	}
 
+	err = initDefaultConfig(config0)
+	if err != nil {
+		log.Errorf("loadConfigFile, initDefaultConfig err = %v", err)
+		return err
+	}
+
+	ctx.Config = config0
+	return nil
+}
+
+func initDefaultConfig(config0 *config.Config) error {
+	err := initDefaultNumaConfig(config0)
+	if err != nil {
+		log.Errorf("initDefaultConfig, initDefaultNumaConfig err = %v", err)
+		return err
+	}
+
+	err = initDefaultFiltersConfig(config0)
+	if err != nil {
+		log.Errorf("initDefaultConfig, initDefaultFiltersConfig err = %v", err)
+		return err
+	}
+
 	if config0.Service.Pool.LoadType == config.Phys {
 		// convert idle phys cores to logical
 		// then load_type: "phys"
@@ -72,7 +97,69 @@ func loadConfigFile(ctx *Context) error {
 		config0.Service.Pool.Idle.Values = logicalCores
 	}
 
-	ctx.Config = config0
+	return nil
+}
+
+func initDefaultNumaConfig(config0 *config.Config) error {
+	if len(config0.Service.Pool.Idle.Values) != 0 && len(config0.Service.Pool.Load.Values) != 0 {
+		return nil
+	}
+
+	nodesPhys, err := numa.GetNodesPhys()
+	if err != nil {
+		return err
+	}
+
+	node0 := nodesPhys[0]
+
+	numaNodesCount := len(nodesPhys)
+	numaCoresCount := len(node0.Cores)
+	coresCount := getIdleCoresCountDefault(numaNodesCount, numaCoresCount)
+
+	idleCores := make([]int, 0, coresCount)
+	for i := 0; i < coresCount; i++ {
+		id := node0.Cores[i].Id
+		idleCores = append(idleCores, id)
+	}
+
+	l1 := (numaNodesCount-1)*numaCoresCount + numaCoresCount - coresCount
+	loadCores := make([]int, 0, l1)
+
+	for i := coresCount; i < numaCoresCount; i++ {
+		id := node0.Cores[i].Id
+		loadCores = append(loadCores, id)
+	}
+
+	for i := 1; 1 < numaNodesCount; i++ {
+		node := nodesPhys[i]
+		for _, core := range node.Cores {
+			loadCores = append(loadCores, core.Id)
+		}
+	}
+
+	pool := config0.Service.Pool
+	pool.Idle.Values = idleCores
+	pool.Load.Values = loadCores
+	pool.LoadType = config.Phys
+
+	config0.Service.Pool = pool
+	return nil
+}
+
+func initDefaultFiltersConfig(config0 *config.Config) error {
+	if len(config0.Service.Filters0) != 0 && len(config0.Service.Filters1) != 0 {
+		return nil
+	}
+
+	paths0, ok := os_utils.Which0("kvm", "qemu-system-x86_64")
+	if !ok {
+		return fmt.Errorf("kvm, qemu-system-x86_64 not found in $PATH")
+	}
+	filters0 := config.NewDefaultFilters2(paths0)
+	filters1 := config.NewDefaultFilters2(paths0)
+
+	config0.Service.Filters0 = filters0
+	config0.Service.Filters1 = filters1
 	return nil
 }
 

@@ -7,6 +7,13 @@ func CopyIntSlice(slice []int) []int {
 	return sl0s
 }
 
+func CopyStringSlice(slice []string) []string {
+	l0 := len(slice)
+	sl0s := make([]string, l0)
+	copy(sl0s, slice)
+	return sl0s
+}
+
 func IsIntSliceEqual(left []int, right []int) bool {
 	l0 := len(left)
 	l1 := len(right)

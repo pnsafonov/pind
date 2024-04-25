@@ -11,20 +11,30 @@ log:
     stderr_enabled: true
 service:
     interval: 1000
-    threshold: 75
+    threshold: 150
     idle_overwork: 80
-    filters0:
-        - patterns:
-              # all patterns must be selected
-              - /usr/bin/qemu-system-x86_64
-    filters1:
-        - patterns:
-              # all patterns must be selected
-              - /usr/bin/qemu-system-x86_64
 
-    pool:
-        idle: 0-1
-        load: 2-6
+#    filters0:
+#        # any of
+#        - patterns:
+#              # all patterns must be selected
+#              - /usr/bin/kvm
+#        - patterns:
+#              # all patterns must be selected
+#              - /usr/bin/qemu-system-x86_64
+#    filters1:
+#        # any of
+#        - patterns:
+#              # all patterns must be selected
+#              - /usr/bin/kvm
+#        - patterns:
+#              # all patterns must be selected
+#              - /usr/bin/qemu-system-x86_64
+
+#    pool:
+#        idle: 6-7
+#        load: 0-5
+#        load_type: phys
 
     selection:
         patterns:
@@ -41,7 +51,3 @@ service:
         selected_cores_count: 1
         # 2 thread for all threads not selected by selection patterns
         not_selected_cores_count: 2
-
-    http_api:
-        enabled: true
-        listen: "0.0.0.0:10331"

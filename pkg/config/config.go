@@ -54,15 +54,15 @@ type Pool struct {
 }
 
 type ProcFilter struct {
-	Patterns []string `yaml:"patterns"`
+	Patterns []string `yaml:"patterns" json:"patterns"`
 }
 
 type Selection struct {
-	Patterns []string `yaml:"patterns"`
+	Patterns []string `yaml:"patterns" json:"patterns"`
 }
 
 type Ignore struct {
-	Patterns []string `yaml:"patterns"`
+	Patterns []string `yaml:"patterns" json:"patterns"`
 }
 
 type PinCoresAlgo struct {
@@ -97,6 +97,17 @@ func NewDefaultFilters1() []*ProcFilter {
 	return filters
 }
 
+func NewDefaultFilters2(patternsAny []string) []*ProcFilter {
+	l0 := len(patternsAny)
+	result := make([]*ProcFilter, 0, l0)
+	for _, pattern := range patternsAny {
+		result = append(result, &ProcFilter{
+			Patterns: []string{pattern},
+		})
+	}
+	return result
+}
+
 func NewDefaultConfig() *Config {
 	config := &Config{}
 
@@ -117,10 +128,10 @@ func NewDefaultConfig() *Config {
 	}
 
 	pool := Pool{
-		Idle: Intervals{Values: []int{0, 1}},
-		Load: Intervals{Values: []int{2, 3, 4, 5}},
+		//Idle: Intervals{Values: []int{0, 1}},
+		//Load: Intervals{Values: []int{2, 3, 4, 5}},
 		//Load: Intervals{Values: []int{2, 3, 4, 5, 6}},
-		LoadType: Logical,
+		LoadType: Phys,
 	}
 
 	selection := Selection{
@@ -141,8 +152,10 @@ func NewDefaultConfig() *Config {
 		Listen:  "0.0.0.0:10331",
 	}
 
-	filters0 := NewDefaultFilters0()
-	filters1 := NewDefaultFilters1()
+	//filters0 := NewDefaultFilters0()
+	//filters1 := NewDefaultFilters1()
+	var filters0 []*ProcFilter
+	var filters1 []*ProcFilter
 	service := &Service{
 		Interval:     1000,
 		Threshold:    150,

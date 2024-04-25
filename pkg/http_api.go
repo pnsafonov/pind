@@ -80,6 +80,14 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 	errs := getErrors(ctx)
 	state.Errors = errs
 
+	config0 := &http_api.Config{
+		Filters0:  ctx.Config.Service.Filters0,
+		Filters1:  ctx.Config.Service.Filters1,
+		Selection: ctx.Config.Service.Selection,
+		Ignore:    ctx.Config.Service.Ignore,
+	}
+	state.Config = config0
+
 	return state
 }
 

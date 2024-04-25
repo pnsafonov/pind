@@ -1,5 +1,7 @@
 package http_api
 
+import "github.com/pnsafonov/pind/pkg/config"
+
 type State struct {
 	Errors *Errors `json:"errors"`
 	Time   string  `json:"time"`
@@ -7,11 +9,20 @@ type State struct {
 
 	Pool *Pool   `json:"pool"`
 	Numa []*Numa `json:"numa"`
+
+	Config *Config `json:"config"`
 }
 
 type Procs struct {
 	NotInFilter map[string]*Proc `json:"not_in_filter"`
 	InFilter    map[string]*Proc `json:"in_filter"`
+}
+
+type Config struct {
+	Filters0  []*config.ProcFilter `json:"filters0"`
+	Filters1  []*config.ProcFilter `json:"filters1"`
+	Selection config.Selection     `json:"selection"`
+	Ignore    *config.Ignore       `json:"ignore"`
 }
 
 type Proc struct {
