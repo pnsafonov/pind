@@ -14,16 +14,21 @@ service:
     threshold: 150
     idle_overwork: 80
     filters0:
+        # any of
         - patterns:
-            # all patterns must be selected
-            - /usr/bin/qemu-system-x86_64
+              # all patterns must be selected
+              - /usr/bin/kvm
+        - patterns:
+              # all patterns must be selected
+              - /usr/bin/qemu-system-x86_64
     filters1:
+        # any of
         - patterns:
               # all patterns must be selected
-              - deb-0
+              - /usr/bin/kvm
         - patterns:
               # all patterns must be selected
-              - deb-1
+              - /usr/bin/qemu-system-x86_64
     pool:
         idle: 6-7
         load: 0-5
