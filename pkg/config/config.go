@@ -8,14 +8,8 @@ import (
 )
 
 const (
-	ProcFilterTypeName     = "name"
-	SelectionTypeSingle    = "single" // core per thread
-	PinCoresAlgoTypeSingle = "single"
-	IgnoreTypeName         = "name"
-
-	// Phys - pool load type physical
-	Phys    = "phys" // pin to physical cores, ignore hyper threading
-	Logical = "logical"
+	Phys    = "phys"    // pin to physical cores, ignore hyper threading
+	Logical = "logical" // default pool type, all cores types
 )
 
 type Config struct {
@@ -60,24 +54,20 @@ type Pool struct {
 }
 
 type ProcFilter struct {
-	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
 }
 
 type Selection struct {
-	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
 }
 
 type Ignore struct {
-	Type     string   `yaml:"type"`
 	Patterns []string `yaml:"patterns"`
 }
 
 type PinCoresAlgo struct {
-	Type        string `yaml:"type"`
-	Selected    int    `yaml:"selected_cores_count"`
-	NotSelected int    `yaml:"not_selected_cores_count"`
+	Selected    int `yaml:"selected_cores_count"`
+	NotSelected int `yaml:"not_selected_cores_count"`
 }
 
 type HttpApi struct {
@@ -87,11 +77,9 @@ type HttpApi struct {
 
 func NewDefaultFilters0() []*ProcFilter {
 	filter0 := &ProcFilter{
-		Type:     ProcFilterTypeName,
 		Patterns: []string{"/usr/bin/kvm"},
 	}
 	filter1 := &ProcFilter{
-		Type:     ProcFilterTypeName,
 		Patterns: []string{"/usr/bin/qemu-system-x86_64"},
 	}
 	filters := []*ProcFilter{filter0, filter1}
@@ -100,11 +88,9 @@ func NewDefaultFilters0() []*ProcFilter {
 
 func NewDefaultFilters1() []*ProcFilter {
 	filter0 := &ProcFilter{
-		Type:     ProcFilterTypeName,
 		Patterns: []string{"deb-2"},
 	}
 	filter1 := &ProcFilter{
-		Type:     ProcFilterTypeName,
 		Patterns: []string{"deb-3"},
 	}
 	filters := []*ProcFilter{filter0, filter1}
@@ -138,18 +124,15 @@ func NewDefaultConfig() *Config {
 	}
 
 	selection := Selection{
-		Type:     SelectionTypeSingle,
 		Patterns: []string{"CPU", "/KVM"},
 	}
 
 	pinCoresAlgo := &PinCoresAlgo{
-		Type:        PinCoresAlgoTypeSingle,
 		Selected:    1, // 1 core per thread
 		NotSelected: 2, // 2 cores for other threads
 	}
 
 	ignore := &Ignore{
-		Type:     IgnoreTypeName,
 		Patterns: []string{"iou-wrk-"},
 	}
 

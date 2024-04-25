@@ -14,18 +14,15 @@ service:
     threshold: 150
     idle_overwork: 80
     filters0:
-        - type: name
-          patterns:
+        - patterns:
               # all patterns must be selected
               - /usr/bin/qemu-system-x86_64
     filters1:
-        - type: name
-          patterns:
+        - patterns:
               # all patterns must be selected
               - deb-2
               - cant-match-this
-        - type: name
-          patterns:
+        - patterns:
               # all patterns must be selected
               - deb-3
               - cant-match-this
@@ -34,20 +31,17 @@ service:
         load: 2-5
 
     selection:
-        type: single
         patterns:
             # all patterns must be selected
             - CPU
             - /KVM
 
     ignore:
-        type: name
         patterns:
             - iou-wrk-
             - "SPICE Worker"
 
     pin_cores_algo:
-        type: single
         # 1 core per thread selected by selection patterns
         selected_cores_count: 1
         # 2 thread for all threads not selected by selection patterns
