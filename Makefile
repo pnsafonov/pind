@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: build pind
 
 build: pind
 

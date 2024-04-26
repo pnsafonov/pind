@@ -140,7 +140,7 @@ func initDefaultNumaConfig(config0 *config.Config) error {
 		loadCores = append(loadCores, id)
 	}
 
-	for i := 1; 1 < numaNodesCount; i++ {
+	for i := 1; i < numaNodesCount; i++ {
 		node := nodesPhys[i]
 		for _, core := range node.Cores {
 			loadCores = append(loadCores, core.Id)
