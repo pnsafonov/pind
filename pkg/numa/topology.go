@@ -152,25 +152,25 @@ func parseIntList0(val0 string) ([]int, error) {
 func newTopology(cpuTopology *sysfs.CPUTopology) (*Topology, error) {
 	coreID, err := strconv.Atoi(cpuTopology.CoreID)
 	if err != nil {
-		log.Errorf("newTopology, strconv.Atoi(cpuTopology.CoreID) err = %v", err)
+		log.Errorf("newTopology, strconv.Atoi(cpuTopology.CoreID) err = %v, cpuTopology.CoreID = %s", err, cpuTopology.CoreID)
 		return nil, err
 	}
 
 	coreSiblingsList, err := parseIntList0(cpuTopology.CoreSiblingsList)
 	if err != nil {
-		log.Errorf("newTopology, parseIntList(cpuTopology.CoreSiblingsList) err = %v", err)
+		log.Errorf("newTopology, parseIntList(cpuTopology.CoreSiblingsList) err = %v, cpuTopology.CoreSiblingsList = %s", err, cpuTopology.CoreSiblingsList)
 		return nil, err
 	}
 
 	physicalPackageID, err := strconv.Atoi(cpuTopology.PhysicalPackageID)
 	if err != nil {
-		log.Errorf("newTopology, strconv.Atoi(cpuTopology.PhysicalPackageID) err = %v", err)
+		log.Errorf("newTopology, strconv.Atoi(cpuTopology.PhysicalPackageID) err = %v, cpuTopology.PhysicalPackageID = %s", err, cpuTopology.PhysicalPackageID)
 		return nil, err
 	}
 
 	threadSiblingsList, err := parseIntList(cpuTopology.ThreadSiblingsList)
 	if err != nil {
-		log.Errorf("newTopology, parseIntList(cpuTopology.ThreadSiblingsList) err = %v", err)
+		log.Errorf("newTopology, parseIntList(cpuTopology.ThreadSiblingsList) err = %v, cpuTopology.ThreadSiblingsList = %s", err, cpuTopology.ThreadSiblingsList)
 		return nil, err
 	}
 	sort.Slice(threadSiblingsList, func(i, j int) bool {
