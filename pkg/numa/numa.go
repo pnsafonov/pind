@@ -34,21 +34,25 @@ func init() {
 
 	nodes, initError = initNodes(nodesCount)
 	if initError != nil {
+		log.Errorf("init, initNodes err = %v", initError)
 		return
 	}
 
 	procfs0, initError = procfs.NewDefaultFS()
 	if initError != nil {
+		log.Errorf("init, procfs.NewDefaultFS err = %v", initError)
 		return
 	}
 
 	sysfs0, initError = sysfs.NewDefaultFS()
 	if initError != nil {
+		log.Errorf("init, sysfs.NewDefaultFS err = %v", initError)
 		return
 	}
 
 	nodesPhys, initError = GetNodesPhysInfo()
 	if initError != nil {
+		log.Errorf("init, GetNodesPhysInfo err = %v", initError)
 		return
 	}
 
@@ -56,6 +60,7 @@ func init() {
 	l1 := len(nodesPhys)
 	if l0 != l1 {
 		initError = fmt.Errorf("count of nodes and nodesPhys is not same, %d != %d", l0, l1)
+		log.Errorf("init, err = %v", initError)
 	}
 }
 
@@ -64,10 +69,12 @@ func initNodes(nodesCount int) ([]*NodeInfo, error) {
 	for i := 0; i < nodesCount; i++ {
 		mask0, err := numa.NodeToCPUMask(i)
 		if err != nil {
+			log.Errorf("initNodes, numa.NodeToCPUMask err = %v", err)
 			return nil, err
 		}
 		ni, err := maskToNodeInfo(mask0)
 		if err != nil {
+			log.Errorf("initNodes, maskToNodeInfo err = %v", err)
 			return nil, err
 		}
 		ni.Index = i
