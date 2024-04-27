@@ -47,21 +47,3 @@ archives:
       {{- if eq .Os "darwin" }}macos_
       {{- else }}{{ .Os }}_{{ end }}
       {{- .Arch }}
-
-#changelog:
-#  sort: asc
-#  filters:
-#    exclude:
-#      - "^Merge"
-
-brews:
-  - skip_upload: auto
-    repository:
-      owner: pnsafonov
-      name: homebrew-tap
-    directory: Formula
-    homepage: https://github.com/pnsafonov/pind
-    description: pind - daemon for pinning cpu cores to processes
-    license: MIT
-    test: |
-      system "#{bin}/pind --version"
