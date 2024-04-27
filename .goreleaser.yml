@@ -11,10 +11,10 @@ before:
 
 builds:
   - env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     goarch:
       - amd64
-      - arm64
+#      - arm64
     goos:
       - linux
 #      - windows
@@ -35,11 +35,12 @@ archives:
   - files:
       # skip all other files
       - none*
-    format_overrides:
-      - goos: windows
-        format: zip
-      - goos: darwin
-        format: zip
+    format: binary
+#    format_overrides:
+#      - goos: windows
+#        format: zip
+#      - goos: darwin
+#        format: zip
     # pind_1.0.1_linux_amd64.tar.gz
     # pind_1.0.1_macos_arm64.zip
     name_template: >-
@@ -47,4 +48,4 @@ archives:
       {{- .Version }}_
       {{- if eq .Os "darwin" }}macos_
       {{- else }}{{ .Os }}_{{ end }}
-      {{- .Arch }}
+#      {{- .Arch }}
