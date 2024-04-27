@@ -78,7 +78,7 @@ func doMain(args []string) {
 
 	}
 
-	version0, gitHash := GetVersion1()
+	version0, gitHash := GetVersion0()
 	ctx := pkg.NewContext(version0, gitHash)
 	ctx.Service = service0
 	ctx.ConfigPath = configPath
@@ -116,7 +116,7 @@ pin programs to CPU (affinity)
 }
 
 func printVersion() {
-	version0, gitHash := GetVersion1()
+	version0, gitHash := GetVersion0()
 	fmt.Printf("pind version %s %s\n", version0, gitHash)
 	os.Exit(0)
 }

@@ -2,41 +2,33 @@ package main
 
 import (
 	_ "embed"
-	"encoding/json"
 	"runtime/debug"
 )
 
-//go:embed version.json
-var VersionBytes []byte
+var (
+	version = "dev"
+	commit  = commitNone
+	date    = "unknown"
+	builtBy = "manual"
+)
 
-type Version struct {
-	Version string `json:"version"`
-}
+const commitNone = "none"
 
-func GetVersion1() (string, string) {
-	version, _ := GetVersion()
+func GetVersion0() (string, string) {
+	version0 := GetVersion()
 	gitHash := GetGitHash()
-	return version, gitHash
+	return version0, gitHash
 }
 
-func GetVersion0() (*Version, error) {
-	version := &Version{}
-	err := json.Unmarshal(VersionBytes, version)
-	if err != nil {
-		return nil, err
-	}
-	return version, nil
-}
-
-func GetVersion() (string, error) {
-	version, err := GetVersion0()
-	if err != nil {
-		return "", err
-	}
-	return version.Version, nil
+func GetVersion() string {
+	return version
 }
 
 func GetGitHash() string {
+	if commit != commitNone {
+		return commit
+	}
+
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.revision" {
