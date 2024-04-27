@@ -7,7 +7,7 @@ before:
     - go mod download
 
 release:
-  draft: true
+  draft: false
 
 builds:
   - env:
