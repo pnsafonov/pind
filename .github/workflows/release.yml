@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "^1\.*"
+      - "1*"
 
 permissions:
   contents: write
