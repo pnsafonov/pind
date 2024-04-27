@@ -86,7 +86,7 @@ func doMain(args []string) {
 	}
 
 	version0, gitHash := GetVersion0()
-	ctx := pkg.NewContext(version0, gitHash)
+	ctx := pkg.NewContext(version0, gitHash, service0)
 	ctx.Service = service0
 	ctx.ConfigPath = configPath
 	ctx.PrintConfig = printConf0

@@ -22,7 +22,7 @@ func loadConfigAndInit(ctx *Context) error {
 	}
 
 	config0 := ctx.Config
-	initLogger(config0.Log)
+	initLogger(config0.Log, ctx.Service)
 
 	str0, err := config.ToString0(config0)
 	if err != nil {
@@ -73,12 +73,12 @@ func loadConfigFile0(ctx *Context) (*config.Config, error) {
 	confPath := ctx.ConfigPath
 
 	if confPath == ConfPathBuiltIn {
-		config0 := config.NewDefaultConfig()
+		config0 := config.NewDefaultConfig(ctx.Service)
 		log.Infof("use build-in config")
 		return config0, nil
 	}
 
-	config0, err := config.Load(confPath)
+	config0, err := config.Load(confPath, ctx.Service)
 	if err != nil {
 		log.Errorf("loadConfigFile, config.Load err = %v", err)
 		return nil, err

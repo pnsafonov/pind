@@ -38,13 +38,13 @@ type Context struct {
 	GitHash string
 }
 
-func NewContext(version string, gitHash string) *Context {
+func NewContext(version string, gitHash string, isService bool) *Context {
 	ctx := &Context{}
 	ctx.Done = make(chan int, 1)
 	ctx.ConfigPath = ConfPathDef
-	ctx.Service = false
+	ctx.Service = isService
 	ctx.PrintConfig = false
-	ctx.Config = config.NewDefaultConfig()
+	ctx.Config = config.NewDefaultConfig(isService)
 	ctx.Version = version
 	ctx.GitHash = gitHash
 	return ctx
@@ -120,12 +120,12 @@ func doLoop(ctx *Context) {
 	interval := time.Duration(ctx.Config.Service.Interval)
 	done := ctx.Done
 
-	log.Info("doLoop, begin jobs")
+	log.Info("doLoop, pind started as daemon, version = %s git_hash = %s", ctx.Version, ctx.GitHash)
 	ticker := time.NewTicker(interval * time.Millisecond)
 	for {
 		select {
 		case <-done:
-			log.Infof("doLoop received done, end jobs")
+			log.Infof("doLoop, received done, stopping pind, version = %s git_hash = %s", ctx.Version, ctx.GitHash)
 			return
 		case t := <-ticker.C:
 			handler(ctx, t)

@@ -8,7 +8,7 @@ import (
 
 func TestLog0(t *testing.T) {
 	path0 := "tests/pind0.yml"
-	config, err := Load(path0)
+	config, err := Load(path0, false)
 	if err != nil {
 		t.FailNow()
 	}
@@ -19,7 +19,7 @@ func TestLog0(t *testing.T) {
 
 func TestLog1(t *testing.T) {
 	path0 := "tests/pind1.yml"
-	config, err := Load(path0)
+	config, err := Load(path0, false)
 	if err != nil {
 		t.FailNow()
 	}
@@ -30,7 +30,7 @@ func TestLog1(t *testing.T) {
 
 func TestLog2(t *testing.T) {
 	path0 := "tests/pind2.yml"
-	config, err := Load(path0)
+	config, err := Load(path0, false)
 	if err != nil {
 		t.FailNow()
 	}

@@ -14,13 +14,23 @@ var (
 	}
 )
 
-func initLogger(configLog *config.Log) {
+func initLogger(configLog *config.Log, isService bool) {
 	wr := io.MultiWriter()
 	count := 0
 
 	// rotator logger
 	if configLog.RotatorEnabled {
 		configRotator := configLog.Rotator
+
+		// create dir for logs
+		// logrus can do it
+		//dir := filepath.Dir(configRotator.Filename)
+		//if !os_utils.Exists(dir) {
+		//	err := os.MkdirAll(dir, 0744)
+		//	if err != nil {
+		//		log.Errorf("initLogger, os.MkdirAll err = %v, dir = %s", err, dir)
+		//	}
+		//}
 
 		rotator0 := &lumberjack.Logger{
 			Filename:   configRotator.Filename,
@@ -38,6 +48,10 @@ func initLogger(configLog *config.Log) {
 	// if no logger set default to stderr
 	if configLog.StdErrEnabled || count == 0 {
 		wr = io.MultiWriter(wr, os.Stderr)
+	}
+
+	if isService {
+		LogTextFormatter.DisableColors = true
 	}
 
 	log.SetFormatter(LogTextFormatter)

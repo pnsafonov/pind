@@ -108,7 +108,7 @@ func NewDefaultFilters2(patternsAny []string) []*ProcFilter {
 	return result
 }
 
-func NewDefaultConfig() *Config {
+func NewDefaultConfig(isService bool) *Config {
 	config := &Config{}
 
 	rotator := &Rotator{
@@ -122,7 +122,7 @@ func NewDefaultConfig() *Config {
 	log0 := &Log{
 		Level: logrus.InfoLevel,
 		//Level:          logrus.DebugLevel,
-		RotatorEnabled: false,
+		RotatorEnabled: isService,
 		Rotator:        rotator,
 		StdErrEnabled:  true,
 	}
@@ -175,14 +175,14 @@ func NewDefaultConfig() *Config {
 	return config
 }
 
-func Load(confPath0 string) (*Config, error) {
+func Load(confPath0 string, isService bool) (*Config, error) {
 	bytes0, err := os.ReadFile(confPath0)
 	if err != nil {
 		log.Errorf("Load, os.ReadFile err = %v\n", err)
 		return nil, err
 	}
 
-	config := NewDefaultConfig()
+	config := NewDefaultConfig(isService)
 	err = yaml.Unmarshal(bytes0, config)
 	if err != nil {
 		log.Errorf("Load, yaml.Unmarshal err = %v\n", err)
