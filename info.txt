@@ -1,3 +1,6 @@
+# make release on github
+git tag v1.0.1
+git push origin tag v1.0.1
 
 sched_getaffinity
 
