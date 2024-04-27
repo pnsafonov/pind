@@ -96,7 +96,16 @@ func GetCpuTopologyInfo() ([]*CpuTopologyInfo, error) {
 }
 
 // parseIntList - parse list like "1,7,8,16"
+// and like "0-15"
 func parseIntList(val0 string) ([]int, error) {
+	if strings.Contains(val0, ",") {
+		return parseIntList0(val0)
+	}
+	return parseIntList1(val0)
+}
+
+// parseIntList0 - parse list like "1,7,8,16"
+func parseIntList0(val0 string) ([]int, error) {
 	split0 := strings.Split(val0, ",")
 	l0 := len(split0)
 	result := make([]int, 0, l0)
@@ -111,12 +120,12 @@ func parseIntList(val0 string) ([]int, error) {
 	return result, nil
 }
 
-// parseIntList - parse list like "0-15"
-func parseIntList0(val0 string) ([]int, error) {
+// parseIntList0 - parse list like "0-15"
+func parseIntList1(val0 string) ([]int, error) {
 	split0 := strings.Split(val0, "-")
 	l0 := len(split0)
 	if l0 != 2 {
-		//log.Errorf("parseIntList0, invalid split count = %d", l0)
+		//log.Errorf("parseIntList1, invalid split count = %d", l0)
 		//return nil, fmt.Errorf("invalid split count = %d", l0)
 		return nil, nil
 	}
@@ -124,14 +133,14 @@ func parseIntList0(val0 string) ([]int, error) {
 	str0 := strings.TrimSpace(split0[0])
 	from, err := strconv.Atoi(str0)
 	if err != nil {
-		log.Errorf("parseIntList0, strconv.Atoi(str0) err = %v, str0 = %v", err, str0)
+		log.Errorf("parseIntList1, strconv.Atoi(str0) err = %v, str0 = %v", err, str0)
 		return nil, err
 	}
 
 	str1 := strings.TrimSpace(split0[1])
 	to, err := strconv.Atoi(str1)
 	if err != nil {
-		log.Errorf("parseIntList0, strconv.Atoi(str1) err = %v, str1 = %v", err, str1)
+		log.Errorf("parseIntList1, strconv.Atoi(str1) err = %v, str1 = %v", err, str1)
 		return nil, err
 	}
 
@@ -156,7 +165,7 @@ func newTopology(cpuTopology *sysfs.CPUTopology) (*Topology, error) {
 		return nil, err
 	}
 
-	coreSiblingsList, err := parseIntList0(cpuTopology.CoreSiblingsList)
+	coreSiblingsList, err := parseIntList(cpuTopology.CoreSiblingsList)
 	if err != nil {
 		log.Errorf("newTopology, parseIntList(cpuTopology.CoreSiblingsList) err = %v, cpuTopology.CoreSiblingsList = %s", err, cpuTopology.CoreSiblingsList)
 		return nil, err
