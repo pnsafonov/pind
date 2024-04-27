@@ -120,12 +120,12 @@ func doLoop(ctx *Context) {
 	interval := time.Duration(ctx.Config.Service.Interval)
 	done := ctx.Done
 
-	log.Info("doLoop, pind started as daemon, version = %s git_hash = %s", ctx.Version, ctx.GitHash)
+	log.Infof("doLoop, pind started as daemon, version = %s, git_hash = %s", ctx.Version, ctx.GitHash)
 	ticker := time.NewTicker(interval * time.Millisecond)
 	for {
 		select {
 		case <-done:
-			log.Infof("doLoop, received done, stopping pind, version = %s git_hash = %s", ctx.Version, ctx.GitHash)
+			log.Infof("doLoop, received done, stopping pind, version = %s, git_hash = %s", ctx.Version, ctx.GitHash)
 			return
 		case t := <-ticker.C:
 			handler(ctx, t)

@@ -13,5 +13,6 @@ require (
 
 require (
 	github.com/intel-go/cpuid v0.0.0-20181003105527-1a4a6f06a1c6 // indirect
+	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 )

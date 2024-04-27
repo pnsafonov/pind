@@ -3,14 +3,16 @@ package pkg
 import (
 	"github.com/pnsafonov/pind/pkg/config"
 	log "github.com/sirupsen/logrus"
+	easy "github.com/t-tomalak/logrus-easy-formatter"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
 )
 
 var (
-	LogTextFormatter = &log.TextFormatter{
-		DisableQuote: true, // don't print \n char, print linebreak
+	formatter = &easy.Formatter{
+		TimestampFormat: "2006-01-02 15:04:05.000",
+		LogFormat:       "[%lvl%] %time% - %msg%\n",
 	}
 )
 
@@ -50,11 +52,7 @@ func initLogger(configLog *config.Log, isService bool) {
 		wr = io.MultiWriter(wr, os.Stderr)
 	}
 
-	if isService {
-		LogTextFormatter.DisableColors = true
-	}
-
-	log.SetFormatter(LogTextFormatter)
+	log.SetFormatter(formatter)
 	log.SetOutput(wr)
 	log.SetLevel(configLog.Level)
 
@@ -62,6 +60,6 @@ func initLogger(configLog *config.Log, isService bool) {
 }
 
 func InitConsoleLogger() {
-	log.SetFormatter(LogTextFormatter)
+	log.SetFormatter(formatter)
 	log.SetOutput(os.Stderr)
 }
