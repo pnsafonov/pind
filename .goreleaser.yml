@@ -14,7 +14,7 @@ builds:
       - CGO_ENABLED=1
     goarch:
       - amd64
-#      - arm64
+      - arm64
     goos:
       - linux
 #      - windows
@@ -31,11 +31,16 @@ builds:
 checksum:
   name_template: "checksums.txt"
 
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^Merge"
+
 archives:
   - files:
       # skip all other files
       - none*
-    format: binary
 #    format_overrides:
 #      - goos: windows
 #        format: zip
@@ -48,4 +53,4 @@ archives:
       {{- .Version }}_
       {{- if eq .Os "darwin" }}macos_
       {{- else }}{{ .Os }}_{{ end }}
-#      {{- .Arch }}
+      {{- .Arch }}
