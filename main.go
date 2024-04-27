@@ -115,8 +115,9 @@ pin programs to CPU (affinity)
 }
 
 func printVersion() {
-	versionMsg := `pind 1.0.0`
-	fmt.Println(versionMsg)
+	version0, _ := GetVersion()
+	gitHash := GetGitHash()
+	fmt.Printf("pind version %s %s\n", version0, gitHash)
 	os.Exit(0)
 }
 
