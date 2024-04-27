@@ -13,6 +13,12 @@ type Version struct {
 	Version string `json:"version"`
 }
 
+func GetVersion1() (string, string) {
+	version, _ := GetVersion()
+	gitHash := GetGitHash()
+	return version, gitHash
+}
+
 func GetVersion0() (*Version, error) {
 	version := &Version{}
 	err := json.Unmarshal(VersionBytes, version)

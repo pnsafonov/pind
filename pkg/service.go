@@ -33,15 +33,20 @@ type Context struct {
 	lastCpuInfo *numa.Info
 
 	HttpApi *http_api.HttpApi
+
+	Version string
+	GitHash string
 }
 
-func NewContext() *Context {
+func NewContext(version string, gitHash string) *Context {
 	ctx := &Context{}
 	ctx.Done = make(chan int, 1)
 	ctx.ConfigPath = ConfPathDef
 	ctx.Service = false
 	ctx.PrintConfig = false
 	ctx.Config = config.NewDefaultConfig()
+	ctx.Version = version
+	ctx.GitHash = gitHash
 	return ctx
 }
 

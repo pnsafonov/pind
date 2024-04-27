@@ -19,6 +19,9 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 	pool := ctx.pool
 	state := &http_api.State{}
 
+	state.Version = ctx.Version
+	state.GitHash = ctx.GitHash
+
 	l1 := len(pool.Nodes)
 	nodes := make([]*http_api.PoolNode, 0, l1)
 	for i := 0; i < l1; i++ {

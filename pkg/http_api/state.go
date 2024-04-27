@@ -3,9 +3,11 @@ package http_api
 import "github.com/pnsafonov/pind/pkg/config"
 
 type State struct {
-	Errors *Errors `json:"errors"`
-	Time   string  `json:"time"`
-	Procs  *Procs  `json:"procs"`
+	Version string  `json:"version"`
+	GitHash string  `json:"git_hash"`
+	Errors  *Errors `json:"errors"`
+	Time    string  `json:"time"`
+	Procs   *Procs  `json:"procs"`
 
 	Pool *Pool   `json:"pool"`
 	Numa []*Numa `json:"numa"`
