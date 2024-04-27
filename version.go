@@ -5,15 +5,6 @@ import (
 	"runtime/debug"
 )
 
-var (
-	version = "dev"
-	commit  = commitNone
-	date    = "unknown"
-	builtBy = "manual"
-)
-
-const commitNone = "none"
-
 func GetVersion0() (string, string) {
 	version0 := GetVersion()
 	gitHash := GetGitHash()
@@ -25,7 +16,7 @@ func GetVersion() string {
 }
 
 func GetGitHash() string {
-	if commit != commitNone {
+	if commit != "none" {
 		return commit
 	}
 

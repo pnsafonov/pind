@@ -6,8 +6,8 @@ before:
   hooks:
     - go mod download
 
-release:
-  draft: false
+#release:
+#  draft: false
 
 builds:
   - env:

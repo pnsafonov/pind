@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+	builtBy = "manual"
+)
+
 func main() {
 	doMain(os.Args)
 }
