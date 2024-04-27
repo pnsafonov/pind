@@ -24,6 +24,7 @@ builds:
     ldflags:
       # -w turns off DWARF debugging information
       # -s turns off generation of the Go symbol table
+      - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.CommitDate}}
       - -X main.builtBy=goreleaser
