@@ -124,12 +124,14 @@ func parseIntList0(val0 string) ([]int, error) {
 	str0 := strings.TrimSpace(split0[0])
 	from, err := strconv.Atoi(str0)
 	if err != nil {
+		log.Errorf("parseIntList0, strconv.Atoi(str0) err = %v, str0 = %v", err, str0)
 		return nil, err
 	}
 
 	str1 := strings.TrimSpace(split0[1])
 	to, err := strconv.Atoi(str1)
 	if err != nil {
+		log.Errorf("parseIntList0, strconv.Atoi(str1) err = %v, str1 = %v", err, str1)
 		return nil, err
 	}
 
