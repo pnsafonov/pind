@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	version = "dev"
+	version = dev
 	commit  = "none"
 	date    = "unknown"
 	builtBy = "manual"
@@ -34,6 +34,10 @@ func doMain(args []string) {
 		case "-v", "--version":
 			{
 				printVersion()
+			}
+		case "--version-only":
+			{
+				printVersionOnly()
 			}
 		case "-h", "--help":
 			{
@@ -111,6 +115,7 @@ pin programs to CPU (affinity)
 
   -h, --help                 display this help and exit
   -v, --version              output version information and exit
+      --version-only         print numeric version information and exit
 
       --print-procs "pattern0,pattern1"       print process filtered by ps aux | grep pattern0 | grep pattern1 
       --print-numa                            print information about numa and exit
@@ -125,6 +130,12 @@ pin programs to CPU (affinity)
 func printVersion() {
 	version0, gitHash := GetVersion0()
 	fmt.Printf("pind version %s %s\n", version0, gitHash)
+	os.Exit(0)
+}
+
+func printVersionOnly() {
+	version0 := GetVersion1()
+	fmt.Println(version0)
 	os.Exit(0)
 }
 
