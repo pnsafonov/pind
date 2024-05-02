@@ -85,6 +85,11 @@ func doMain(args []string) {
 				printConf0 = true
 				continue
 			}
+		case "--print-name":
+			{
+				printName()
+				continue
+			}
 		}
 
 	}
@@ -121,7 +126,8 @@ pin programs to CPU (affinity)
       --print-numa                            print information about numa and exit
       --print-numa-phys                       print information about numa topology and exit
       --print-topology                        print information about cpu's topology
-      --print-conf                            print config file content`
+      --print-conf                            print config file content
+      --print-name                            print pind and exit`
 
 	fmt.Println(helpMsg)
 	os.Exit(0)
@@ -142,6 +148,11 @@ func printVersionOnly() {
 func printNuma() {
 	err := numa.PrintNuma0()
 	exit0(err)
+}
+
+func printName() {
+	fmt.Println("pind")
+	os.Exit(0)
 }
 
 func printNumaPhys() {
