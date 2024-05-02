@@ -140,7 +140,7 @@ func printVersion() {
 }
 
 func printVersionOnly() {
-	version0 := GetVersion1()
+	version0 := GetVersion()
 	fmt.Println(version0)
 	os.Exit(0)
 }
