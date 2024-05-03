@@ -356,7 +356,10 @@ func calcIdlePoolLoad(ctx *Context, cpuInfo *numa.Info) {
 
 	pool.IdleLoad0 = load
 
-	load1 := pool.IdleLoad0 / pool.IdleLoadFull0
+	load1 := float64(0)
+	if pool.IdleLoadFull0 != 0 {
+		load1 = pool.IdleLoad0 / pool.IdleLoadFull0
+	}
 	load1 *= 100
 	pool.IdleLoad1 = load1
 
