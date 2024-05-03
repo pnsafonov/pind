@@ -163,7 +163,9 @@ func PrintNumaPhys0() error {
 		l1 := len(ni.Cores)
 		for j := 0; j < l1; j++ {
 			core := ni.Cores[j]
-			_, _ = fmt.Printf("phys core %d, siblings = %v\n", core.Id, core.ThreadSiblings)
+			_, _ = fmt.Printf("phys core %d\n", core.Id)
+			_, _ = fmt.Printf("  core siblings: %v\n", core.TopologyInfo.Topology.CoreSiblingsList)
+			_, _ = fmt.Printf("thread siblings: %v\n", core.ThreadSiblings)
 		}
 	}
 	return nil
