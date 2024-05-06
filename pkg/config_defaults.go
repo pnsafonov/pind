@@ -16,6 +16,6 @@ func getIdleCoresCountDefault(numaCount int, coresCount int) int {
 	coresPart := getIdlePart(numaCount)
 	coresCount0 := float64(coresCount)
 	count := coresPart * coresCount0
-	count0 := count + 0.01
+	count0 := count + 0.001
 	return int(count0)
 }

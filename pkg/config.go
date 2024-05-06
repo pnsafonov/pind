@@ -119,6 +119,20 @@ func initDefaultNumaConfig(config0 *config.Config) error {
 	if err != nil {
 		return err
 	}
+	l0 := len(nodesPhys[0].Cores[0].ThreadSiblings)
+	if l0 == 0 {
+		// no thread siblings, no hyper-threading
+		return initDefaultLogicalPoolConfig(config0)
+	}
+
+	return initDefaultPhysPoolConfig(config0)
+}
+
+func initDefaultPhysPoolConfig(config0 *config.Config) error {
+	nodesPhys, err := numa.GetNodesPhys()
+	if err != nil {
+		return err
+	}
 
 	node0 := nodesPhys[0]
 
@@ -151,6 +165,48 @@ func initDefaultNumaConfig(config0 *config.Config) error {
 	pool.Idle.Values = idleCores
 	pool.Load.Values = loadCores
 	pool.LoadType = config.Phys
+
+	config0.Service.Pool = pool
+	return nil
+}
+
+func initDefaultLogicalPoolConfig(config0 *config.Config) error {
+	nodes, err := numa.GetNodes()
+	if err != nil {
+		return err
+	}
+
+	node0 := nodes[0]
+
+	numaNodesCount := len(nodes)
+	numaCoresCount := len(node0.Cpus)
+	coresCount := getIdleCoresCountDefault(numaNodesCount, numaCoresCount)
+
+	idleCores := make([]int, 0, coresCount)
+	for i := 0; i < coresCount; i++ {
+		id := node0.Cpus[i]
+		idleCores = append(idleCores, id)
+	}
+
+	l1 := (numaNodesCount-1)*numaCoresCount + numaCoresCount - coresCount
+	loadCores := make([]int, 0, l1)
+
+	for i := coresCount; i < numaCoresCount; i++ {
+		id := node0.Cpus[i]
+		loadCores = append(loadCores, id)
+	}
+
+	for i := 1; i < numaNodesCount; i++ {
+		node := nodes[i]
+		for _, core := range node.Cpus {
+			loadCores = append(loadCores, core)
+		}
+	}
+
+	pool := config0.Service.Pool
+	pool.Idle.Values = idleCores
+	pool.Load.Values = loadCores
+	pool.LoadType = config.Logical
 
 	config0.Service.Pool = pool
 	return nil
