@@ -97,8 +97,14 @@ func GetCpuTopologyInfo() ([]*CpuTopologyInfo, error) {
 
 // parseIntList - parse list like "1,7,8,16"
 // and like "0-15"
+// and like "0-23,48-71"
 func parseIntList(val0 string) ([]int, error) {
-	if strings.Contains(val0, ",") {
+	comma := strings.Contains(val0, ",")
+	dash := strings.Contains(val0, "-")
+	if comma && dash {
+		return parseIntList2(val0)
+	}
+	if comma {
 		return parseIntList0(val0)
 	}
 	return parseIntList1(val0)
@@ -155,6 +161,22 @@ func parseIntList1(val0 string) ([]int, error) {
 		result = append(result, i)
 	}
 
+	return result, nil
+}
+
+// parseIntList2 - parse list like "0-23,48-71"
+func parseIntList2(val0 string) ([]int, error) {
+	split0 := strings.Split(val0, ",")
+	l0 := len(split0)
+	var result []int
+	for i := 0; i < l0; i++ {
+		str0 := strings.TrimSpace(split0[i]) // 0-23
+		sl0, err := parseIntList1(str0)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, sl0...)
+	}
 	return result, nil
 }
 
