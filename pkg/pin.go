@@ -395,7 +395,9 @@ func (x *PinState) PinLoad(ctx *Context) error {
 
 		assignedCount := node.assignCores(ctx, procInfo)
 		if assignedCount != cpuCount {
-			log.Warningf("PinState PinLoad, node.assignCores failed, assignedCount = %d need cpuCount = %d", assignedCount, cpuCount)
+			vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
+			nodeState := node.StateString()
+			log.Warningf("PinState PinLoad, node.assignCores failed, assignedCount = %d need cpuCount = %d, vmName = %s, %s", assignedCount, cpuCount, vmName, nodeState)
 		}
 	}
 

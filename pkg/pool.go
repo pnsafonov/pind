@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/http_api"
 	"github.com/pnsafonov/pind/pkg/numa"
@@ -191,6 +192,13 @@ func getAvailableCoresCount(map0 map[int]*PoolCore) int {
 		count += len(core.Available)
 	}
 	return count
+}
+
+func (x *PoolNodeInfo) StateString() string {
+	l0 := len(x.LoadFree)
+	l1 := len(x.LoadUsed)
+	l2 := l0 + l1
+	return fmt.Sprintf("node %d, free = %d, load = %d, total = %d", x.Index, l0, l1, l2)
 }
 
 func (x *PoolNodeInfo) assignCores(ctx *Context, proc *PinProc) int {
