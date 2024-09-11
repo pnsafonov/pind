@@ -29,18 +29,30 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 		free := node0.getLoadFreeSlice()
 		used := node0.getLoadUsedSlice()
 		node := &http_api.PoolNode{
-			Index:    node0.Index,
-			LoadFree: free,
-			LoadUsed: used,
+			Index:        node0.Index,
+			LoadFree:     free,
+			LoadUsed:     used,
+			LoadFree0:    math_utils.Round2(node0.LoadFree0),
+			LoadFree1:    math_utils.Round2(node0.LoadFree1),
+			LoadFreeFull: math_utils.Round2(node0.LoadFreeFull),
+			LoadUsed0:    math_utils.Round2(node0.LoadUsed0),
+			LoadUsed1:    math_utils.Round2(node0.LoadUsed1),
+			LoadUsedFull: math_utils.Round2(node0.LoadUsedFull),
 		}
 		nodes = append(nodes, node)
 	}
 	pool0 := &http_api.Pool{
-		Idle:      ctx.Config.Service.Pool.Idle.Values,
-		IdleLoad0: math_utils.Round2(ctx.pool.IdleLoad0),
-		IdleLoad1: math_utils.Round2(ctx.pool.IdleLoad1),
-		Nodes:     nodes,
-		LoadType:  ctx.Config.Service.Pool.LoadType,
+		Idle:         ctx.Config.Service.Pool.Idle.Values,
+		IdleLoad0:    math_utils.Round2(ctx.pool.IdleLoad0),
+		IdleLoad1:    math_utils.Round2(ctx.pool.IdleLoad1),
+		Nodes:        nodes,
+		LoadType:     ctx.Config.Service.Pool.LoadType,
+		LoadFree0:    math_utils.Round2(ctx.pool.LoadFree0),
+		LoadFree1:    math_utils.Round2(ctx.pool.LoadFree1),
+		LoadFreeFull: math_utils.Round2(ctx.pool.LoadFreeFull),
+		LoadUsed0:    math_utils.Round2(ctx.pool.LoadUsed0),
+		LoadUsed1:    math_utils.Round2(ctx.pool.LoadUsed1),
+		LoadUsedFull: math_utils.Round2(ctx.pool.LoadUsedFull),
 	}
 	state.Pool = pool0
 

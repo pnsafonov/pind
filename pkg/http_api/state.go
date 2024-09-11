@@ -51,17 +51,29 @@ type Cores struct {
 }
 
 type Pool struct {
-	IdleLoad0 float64     `json:"idle_load0"`
-	IdleLoad1 float64     `json:"idle_load1"`
-	Idle      []int       `json:"idle"`
-	Nodes     []*PoolNode `json:"numa_nodes"`
-	LoadType  string      `json:"load_type"`
+	IdleLoad0    float64     `json:"idle_load0"`
+	IdleLoad1    float64     `json:"idle_load1"`
+	Idle         []int       `json:"idle"`
+	Nodes        []*PoolNode `json:"numa_nodes"`
+	LoadType     string      `json:"load_type"`
+	LoadFree0    float64     `json:"load_free0"`
+	LoadFree1    float64     `json:"load_free1"`
+	LoadFreeFull float64     `json:"load_free_full"`
+	LoadUsed0    float64     `json:"load_used0"`
+	LoadUsed1    float64     `json:"load_used1"`
+	LoadUsedFull float64     `json:"load_used_full"`
 }
 
 type PoolNode struct {
-	Index    int         `json:"index"`
-	LoadFree []*PoolCore `json:"load_free"`
-	LoadUsed []*PoolCore `json:"load_used"`
+	Index        int         `json:"index"`
+	LoadFree     []*PoolCore `json:"load_free"`
+	LoadUsed     []*PoolCore `json:"load_used"`
+	LoadFree0    float64     `json:"load_free0"`
+	LoadFree1    float64     `json:"load_free1"`
+	LoadFreeFull float64     `json:"load_free_full"`
+	LoadUsed0    float64     `json:"load_used0"`
+	LoadUsed1    float64     `json:"load_used1"`
+	LoadUsedFull float64     `json:"load_used_full"`
 }
 
 type PoolCore struct {

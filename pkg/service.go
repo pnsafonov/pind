@@ -300,6 +300,7 @@ func calcCoresCPU(ctx *Context) error {
 	}
 
 	calcIdlePoolLoad(ctx, cpuInfos)
+	calcPoolLoad(ctx, cpuInfos)
 
 	ctx.lastCpuInfo = cpuInfos
 	return nil
@@ -367,4 +368,71 @@ func calcIdlePoolLoad(ctx *Context, cpuInfo *numa.Info) {
 		log.Warningf("calcIdlePoolLoad, idle_overwork is high %.2f >= %.2f %%", load1, idleOverwork)
 		ctx.state.Errors.IdleOverwork = fmt.Errorf("idle_overwork %.2f is greater than %.2f %%", load1, idleOverwork)
 	}
+}
+
+func calcPoolLoad(ctx *Context, cpuInfo *numa.Info) {
+	pool := ctx.pool
+
+	pool.LoadFree0 = 0
+	pool.LoadFree1 = 0
+	pool.LoadFreeFull = 0
+	pool.LoadUsed0 = 0
+	pool.LoadUsed1 = 0
+	pool.LoadUsedFull = 0
+
+	for _, node := range pool.Nodes {
+
+		//load := float64(0)
+		//for _, cpu := range node.Node.Cpus {
+		//	info, ok := cpuInfo.GetCpuInfo(cpu)
+		//	if !ok {
+		//		log.Warningf("calcPoolLoad, cpuInfo.GetCpuInfo failed for cpu = %d", cpu)
+		//		continue
+		//	}
+		//	load += info.CpuLoad
+		//}
+		//node.Load0 = load
+
+		loadFree0, loadFree1, loadFreeFull := calcPoolCoresLoad(node.LoadFree, cpuInfo)
+		loadUsed0, loadUsed1, loadUsedFull := calcPoolCoresLoad(node.LoadUsed, cpuInfo)
+
+		node.LoadFree0 = loadFree0
+		node.LoadFree1 = loadFree1
+		node.LoadFreeFull = loadFreeFull
+
+		node.LoadUsed0 = loadUsed0
+		node.LoadUsed1 = loadUsed1
+		node.LoadUsedFull = loadUsedFull
+
+		pool.LoadFree0 += loadFree0
+		pool.LoadFreeFull += loadFreeFull
+		pool.LoadUsed0 += loadUsed0
+		pool.LoadUsedFull += loadUsedFull
+	}
+
+	pool.LoadFree1 = (pool.LoadFree0 / pool.LoadFreeFull) * 100
+	pool.LoadUsed1 = (pool.LoadUsed0 / pool.LoadUsedFull) * 100
+}
+
+func calcPoolCoresLoad(poolCores map[int]*PoolCore, cpuInfo *numa.Info) (float64, float64, float64) {
+	l0 := len(poolCores)
+	loadFull := float64(l0 * 100)
+
+	load := float64(0)
+	for _, poolCore := range poolCores {
+		info, ok := cpuInfo.GetCpuInfo(poolCore.Id)
+		if !ok {
+			log.Warningf("calcPoolCoresLoad, cpuInfo.GetCpuInfo failed for cpu = %d", poolCore.Id)
+			continue
+		}
+
+		load += info.CpuLoad
+	}
+
+	load1 := float64(0)
+	if l0 != 0 {
+		load1 = (load / loadFull) * 100
+	}
+
+	return load, load1, loadFull
 }

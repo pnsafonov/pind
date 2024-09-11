@@ -23,6 +23,13 @@ type Pool struct {
 	IdleLoadFull0 float64 // 400, 600, 800 %
 	IdleLoad0     float64 // 400, 600, 800 %
 	IdleLoad1     float64 // 0-100 %
+
+	LoadFree0    float64
+	LoadFree1    float64
+	LoadFreeFull float64
+	LoadUsed0    float64
+	LoadUsed1    float64
+	LoadUsedFull float64
 }
 
 type PoolNodeInfo struct {
@@ -32,6 +39,13 @@ type PoolNodeInfo struct {
 	LoadFree map[int]*PoolCore
 	LoadUsed map[int]*PoolCore
 	Config   config.Pool
+
+	LoadFree0    float64
+	LoadFree1    float64
+	LoadFreeFull float64
+	LoadUsed0    float64
+	LoadUsed1    float64
+	LoadUsedFull float64
 }
 
 // PoolCore - stores information about physical core.
