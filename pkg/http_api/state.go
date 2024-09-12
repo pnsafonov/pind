@@ -53,6 +53,7 @@ type Cores struct {
 type Pool struct {
 	IdleLoad0    float64     `json:"idle_load0"`
 	IdleLoad1    float64     `json:"idle_load1"`
+	IdleLoadFull float64     `json:"idle_load_full"`
 	Idle         []int       `json:"idle"`
 	Nodes        []*PoolNode `json:"numa_nodes"`
 	LoadType     string      `json:"load_type"`
