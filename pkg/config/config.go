@@ -50,7 +50,8 @@ type Service struct {
 type Pool struct {
 	Idle     Intervals
 	Load     Intervals
-	LoadType string `yaml:"load_type"`
+	LoadType string  `yaml:"load_type"`
+	PinMode  PinMode `yaml:"pin_mode"`
 }
 
 type ProcFilter struct {
@@ -132,6 +133,7 @@ func NewDefaultConfig(isService bool) *Config {
 		//Load: Intervals{Values: []int{2, 3, 4, 5}},
 		//Load: Intervals{Values: []int{2, 3, 4, 5, 6}},
 		LoadType: Phys,
+		PinMode:  PinModeNormal,
 	}
 
 	selection := Selection{

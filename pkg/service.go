@@ -188,10 +188,12 @@ func handler(ctx *Context, time0 time.Time) {
 		errs.PinNotInFilterToIdle = err1
 	}
 
-	err2 := ctx.state.PinIdle()
-	if err2 != nil {
-		log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
-		errs.StatePinIdle = err2
+	if ctx.Config.Service.Pool.PinMode == config.PinModeNormal {
+		err2 := ctx.state.PinIdle()
+		if err2 != nil {
+			log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
+			errs.StatePinIdle = err2
+		}
 	}
 
 	err3 := ctx.state.PinLoad(ctx)

@@ -20,3 +20,4 @@ service:
   pool:
     idle: 124-127
     load: 32-47
+    pin_mode: delayed

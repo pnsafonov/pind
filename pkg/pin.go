@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/pnsafonov/pind/pkg/utils/core_utils"
 	"github.com/pnsafonov/pind/pkg/utils/math_utils"
@@ -384,10 +385,22 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		if node == nil {
 			node0, ok := pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount)
 			if !ok {
-				vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
-				err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCountPhys = %d, cpuCount = %d, vmName = %s", cpuCountPhys, cpuCount, vmName)
-				errs.RequiredCPU.addCpuCount(cpuCount)
-				continue
+				if ctx.Config.Service.Pool.PinMode == config.PinModeDelayed {
+					// evict delayed vms to idle cores
+					err = state.PinIdle()
+					if err != nil {
+						log.Errorf("PinLoad, PinIdle err = %v", err)
+						continue
+					}
+					// second attempt after clean delayed
+					node0, ok = pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount)
+				}
+				if !ok {
+					vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
+					err = fmt.Errorf("PinState, PinLoad pool.getNumaNodeForLoadAssign failed for cpuCountPhys = %d, cpuCount = %d, vmName = %s", cpuCountPhys, cpuCount, vmName)
+					errs.RequiredCPU.addCpuCount(cpuCount)
+					continue
+				}
 			}
 			procInfo.Node = node0
 			node = node0

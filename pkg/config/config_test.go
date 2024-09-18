@@ -26,6 +26,10 @@ func TestLog1(t *testing.T) {
 	if config.Log.Rotator.MaxSize != 2 {
 		t.FailNow()
 	}
+
+	if config.Service.Pool.PinMode != PinModeNormal {
+		t.FailNow()
+	}
 }
 
 func TestLog2(t *testing.T) {
@@ -52,6 +56,10 @@ func TestLog2(t *testing.T) {
 		t.FailNow()
 	}
 	if !reflect.DeepEqual(config.Service.Filters1[1].Patterns, []string{"qemu", "deb11-2"}) {
+		t.FailNow()
+	}
+
+	if config.Service.Pool.PinMode != PinModeDelayed {
 		t.FailNow()
 	}
 
