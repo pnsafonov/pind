@@ -36,6 +36,8 @@ type Context struct {
 
 	Version string
 	GitHash string
+
+	firstRun bool // first work cycle
 }
 
 func NewContext(version string, gitHash string, isService bool) *Context {
@@ -47,6 +49,7 @@ func NewContext(version string, gitHash string, isService bool) *Context {
 	ctx.Config = config.NewDefaultConfig(isService)
 	ctx.Version = version
 	ctx.GitHash = gitHash
+	ctx.firstRun = true
 	return ctx
 }
 
@@ -188,8 +191,11 @@ func handler(ctx *Context, time0 time.Time) {
 		errs.PinNotInFilterToIdle = err1
 	}
 
-	if ctx.Config.Service.Pool.PinMode == config.PinModeNormal {
+	if ctx.Config.Service.Pool.PinMode == config.PinModeNormal || ctx.firstRun {
 		err2 := ctx.state.PinIdle()
+		if ctx.firstRun {
+			ctx.firstRun = false
+		}
 		if err2 != nil {
 			log.Errorf("handler, ctx.state.PinLoad err = %v", err2)
 			errs.StatePinIdle = err2

@@ -389,7 +389,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 					// evict delayed vms to idle cores
 					err = state.PinIdle()
 					if err != nil {
-						log.Errorf("PinLoad, PinIdle err = %v", err)
+						log.Errorf("PinLoad, PinIdle 0 err = %v", err)
 						continue
 					}
 					// second attempt after clean delayed
@@ -408,9 +408,22 @@ func (x *PinState) PinLoad(ctx *Context) error {
 
 		assignedCount := node.assignCores(ctx, procInfo)
 		if assignedCount != cpuCount {
-			vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
-			nodeState := node.StateString()
-			log.Warningf("PinState PinLoad, node.assignCores failed, assignedCount = %d need cpuCount = %d, vmName = %s, %s", assignedCount, cpuCount, vmName, nodeState)
+			if ctx.Config.Service.Pool.PinMode == config.PinModeDelayed {
+				// evict delayed vms to idle cores
+				err = state.PinIdle()
+				if err != nil {
+					log.Errorf("PinLoad, PinIdle 1 err = %v", err)
+					continue
+				}
+				// second attempt to assign cores
+				assignedCount = node.assignCores(ctx, procInfo)
+			}
+
+			if assignedCount != cpuCount {
+				vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)
+				nodeState := node.StateString()
+				log.Warningf("PinState PinLoad, node.assignCores failed, assignedCount = %d need cpuCount = %d, vmName = %s, %s", assignedCount, cpuCount, vmName, nodeState)
+			}
 		}
 	}
 
