@@ -412,8 +412,12 @@ func calcPoolLoad(ctx *Context, cpuInfo *numa.Info) {
 		pool.LoadUsedFull += loadUsedFull
 	}
 
-	pool.LoadFree1 = (pool.LoadFree0 / pool.LoadFreeFull) * 100
-	pool.LoadUsed1 = (pool.LoadUsed0 / pool.LoadUsedFull) * 100
+	if pool.LoadFreeFull != 0 {
+		pool.LoadFree1 = (pool.LoadFree0 / pool.LoadFreeFull) * 100
+	}
+	if pool.LoadUsedFull != 0 {
+		pool.LoadUsed1 = (pool.LoadUsed0 / pool.LoadUsedFull) * 100
+	}
 }
 
 func calcPoolCoresLoad(poolCores map[int]*PoolCore, cpuInfo *numa.Info) (float64, float64, float64) {
