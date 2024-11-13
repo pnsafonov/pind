@@ -65,10 +65,38 @@ func (x *HttpApi) serve(l net.Listener) {
 	_ = x.Server.Serve(l)
 }
 
+func writeStateBytes(w http.ResponseWriter, state *State) error {
+	stateBytes, err := json.MarshalIndent(state, "", "    ")
+	if err != nil {
+		log.Errorf("HttpApi writeStateBytes, json.Marshal err = %v", err)
+		return err
+	}
+
+	_, err = w.Write(stateBytes)
+	return err
+}
+
 // getApiState - /api/state
 func (x *HttpApi) getApiState(w http.ResponseWriter, r *http.Request) {
 	header := w.Header()
 	header.Set("Content-Type", "application/json; charset=utf-8")
 
+	// /api/state?vm_name=my_env_db
+	vmName := r.URL.Query().Get("vm_name")
+	if vmName != "" {
+		state1 := x.state.CloneWithFilter1(vmName)
+		_ = writeStateBytes(w, state1)
+		return
+	}
+
+	// /api/state?vm_prefix=my_env_
+	vmPrefix := r.URL.Query().Get("vm_prefix")
+	if vmPrefix != "" {
+		state1 := x.state.CloneWithFilter2(vmPrefix)
+		_ = writeStateBytes(w, state1)
+		return
+	}
+
+	// /api/state
 	_, _ = w.Write(x.stateBytes)
 }
