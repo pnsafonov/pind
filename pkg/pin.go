@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/pnsafonov/pind/pkg/utils/core_utils"
@@ -9,7 +11,6 @@ import (
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"sort"
 )
 
 type ThreadSelection int
@@ -340,6 +341,9 @@ func (x *PinState) PinIdle() error {
 			// is not used in idle
 			procInfo.NotSelected.Zero()
 		}
+
+		// reset node when idle
+		procInfo.Node = nil
 	}
 
 	return err

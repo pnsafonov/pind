@@ -1,8 +1,9 @@
 package pkg
 
 import (
-	"github.com/pnsafonov/pind/pkg/numa"
 	"testing"
+
+	"github.com/pnsafonov/pind/pkg/numa"
 )
 
 type isMaskInSetTestCase0 struct {
@@ -76,3 +77,66 @@ func TestIsMaskInSet0(t *testing.T) {
 	}
 
 }
+
+// type testPool struct {
+// 	Nodes     []*PoolNodeInfo
+// 	NodeIndex int
+// }
+
+// func getAvailableCoresCountAlgo0(map0 map[int]*PoolCore) int {
+// 	return 0
+// }
+
+// func (x *testPool) algo0(requiredCountPhys int, requiredCount int) (*PoolNodeInfo, bool) {
+// 	l0 := len(x.Nodes)
+// 	var freeNode *PoolNodeInfo
+// 	counter := 0
+// 	i := x.NodeIndex
+// 	for {
+// 		if i >= l0 {
+// 			i = 0
+// 		}
+// 		if counter >= l0 {
+// 			break
+// 		}
+
+// 		node := x.Nodes[i]
+// 		freeCountPhys := len(node.LoadFree)
+// 		freeCount := getAvailableCoresCountAlgo0(node.LoadFree)
+// 		if freeCountPhys >= requiredCountPhys && freeCount >= requiredCount {
+// 			freeNode = node
+// 			i++
+// 			break
+// 		}
+
+// 		i++
+// 		counter++
+// 	}
+// 	x.NodeIndex = i
+// 	return freeNode, freeNode != nil
+// }
+
+// func TestAlgo0(t *testing.T) {
+// 	node0 := &PoolNodeInfo{}
+
+// 	node1 := &PoolNodeInfo{}
+
+// 	nodes0 := []*PoolNodeInfo{
+// 		node0, node1,
+// 	}
+
+// 	pool0 := &testPool{
+// 		Nodes:     nodes0,
+// 		NodeIndex: 1,
+// 	}
+
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// 	pool0.algo0(2, 2)
+// }
