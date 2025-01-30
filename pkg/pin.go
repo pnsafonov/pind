@@ -309,6 +309,25 @@ func (x *PinThread) UpdateThread(thread *ThreadInfo) {
 	x.ThreadInfo = thread
 }
 
+// IsIdle - проверяет, что все потоки гарантированно находятся idle pool
+func (x *PinProc) IsIdle(state *PinState) bool {
+	for _, thread := range x.Threads {
+		if thread.ThreadInfo.Ignored {
+			continue
+		}
+
+		if thread.Cpus.IsAnyInited() {
+			return false
+		}
+
+		if !isMasksEqual(thread.ThreadInfo.CpuSet, state.Idle.CpuSet) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (x *PinState) PinIdle() error {
 	var err error
 	state := x
@@ -342,9 +361,13 @@ func (x *PinState) PinIdle() error {
 			procInfo.NotSelected.Zero()
 		}
 
-		// reset node when idle
-		// error: core is not freed in load pool
-		//procInfo.Node = nil
+		// эти проверки необходимы, чтобы сбросить numa node
+		// только у процесса в idle
+		if procInfo.Node != nil {
+			if procInfo.IsIdle(state) {
+				procInfo.Node = nil
+			}
+		}
 	}
 
 	return err
