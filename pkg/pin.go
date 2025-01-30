@@ -343,7 +343,8 @@ func (x *PinState) PinIdle() error {
 		}
 
 		// reset node when idle
-		procInfo.Node = nil
+		// error: core is not freed in load pool
+		//procInfo.Node = nil
 	}
 
 	return err
