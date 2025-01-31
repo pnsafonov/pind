@@ -5,7 +5,9 @@ import (
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/http_api"
 	"github.com/pnsafonov/pind/pkg/numa"
+	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 	"os"
 	"os/signal"
 	"syscall"
@@ -68,6 +70,12 @@ func RunService(ctx *Context) error {
 		return err
 	}
 
+	err = pinSelfProcess(ctx)
+	if err != nil {
+		log.Errorf("RunService, pinSelfProcess err = %v", err)
+		return err
+	}
+
 	err = doHttpApi(ctx)
 	if err != nil {
 		log.Errorf("RunService, doHttpApi err = %v", err)
@@ -76,6 +84,31 @@ func RunService(ctx *Context) error {
 
 	doSignals(ctx)
 	doLoop(ctx)
+
+	return nil
+}
+
+// pinSelfProcess - привязать все потоки текущего процесса
+// к idle ядрам
+func pinSelfProcess(ctx *Context) error {
+	pid := os.Getpid()
+	log.Printf("pid = %d", pid)
+	set := &ctx.state.Idle.CpuSet
+
+	threads, err := procfs.AllThreads(pid)
+	if err != nil {
+		log.Errorf("pinSelfProcess, procfs.AllThreads err = %v, pid = %d", err, pid)
+		return err
+	}
+	l1 := len(threads)
+	for j := 0; j < l1; j++ {
+		thread := threads[j]
+		err := unix.SchedSetaffinity(thread.PID, set)
+		if err != nil {
+			log.Errorf("pinSelfProcess, schedSetaffinity err = %v, thread pid = %d", err, thread.PID)
+			return err
+		}
+	}
 
 	return nil
 }
