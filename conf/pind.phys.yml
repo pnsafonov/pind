@@ -31,7 +31,7 @@ service:
     pool:
         # physical cores numbers must be here: 6 [6 14], 7 [7 15]
         idle: 6-7
-        load: 0-5
+        load: 0-3
         load_type: phys
 
     selection:

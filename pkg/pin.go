@@ -361,12 +361,8 @@ func (x *PinState) PinIdle() error {
 			procInfo.NotSelected.Zero()
 		}
 
-		// эти проверки необходимы, чтобы сбросить numa node
-		// только у процесса в idle
 		if procInfo.Node != nil {
-			if procInfo.IsIdle(state) {
-				procInfo.Node = nil
-			}
+			procInfo.Node = nil
 		}
 	}
 
