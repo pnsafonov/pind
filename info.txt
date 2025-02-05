@@ -2,6 +2,7 @@
 git tag v1.0.1
 git push origin tag v1.0.1
 
+taskset -a -c -p 337547
 sched_getaffinity
 
 go get github.com/sirupsen/logrus@v1.9.3
