@@ -48,6 +48,7 @@ func fillHttpApiState(ctx *Context) *http_api.State {
 		IdleLoadFull: math_utils.Round2(ctx.pool.IdleLoadFull0),
 		Nodes:        nodes,
 		LoadType:     ctx.Config.Service.Pool.LoadType,
+		LoadMode:     ctx.Config.Service.Pool.GetPinModeStr(),
 		LoadFree0:    math_utils.Round2(ctx.pool.LoadFree0),
 		LoadFree1:    math_utils.Round2(ctx.pool.LoadFree1),
 		LoadFreeFull: math_utils.Round2(ctx.pool.LoadFreeFull),

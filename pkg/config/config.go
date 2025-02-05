@@ -54,6 +54,13 @@ type Pool struct {
 	PinMode  PinMode `yaml:"pin_mode"`
 }
 
+func (x *Pool) GetPinModeStr() string {
+	if x.PinMode == PinModeNormal {
+		return "normal"
+	}
+	return "delayed"
+}
+
 type ProcFilter struct {
 	Patterns []string `yaml:"patterns" json:"patterns"`
 }

@@ -57,6 +57,7 @@ type Pool struct {
 	Idle         []int       `json:"idle"`
 	Nodes        []*PoolNode `json:"numa_nodes"`
 	LoadType     string      `json:"load_type"`
+	LoadMode     string      `json:"load_mode"`
 	LoadFree0    float64     `json:"load_free0"`
 	LoadFree1    float64     `json:"load_free1"`
 	LoadFreeFull float64     `json:"load_free_full"`
