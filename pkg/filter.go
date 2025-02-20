@@ -30,14 +30,15 @@ type ThreadInfo struct {
 	Ignored bool // ignore thread: can't sched_getaffinity with any cpu
 }
 
-func filterProcsInfo0(filters []*config.ProcFilter, ignore *config.Ignore) ([]*ProcInfo, error) {
+func filterProcsInfo0(filters []*config.ProcFilter, filtersAlwaysIdle []*config.ProcFilter, ignore *config.Ignore) ([]*ProcInfo, []*ProcInfo, error) {
 	procs, err := procfs.AllProcs()
 	if err != nil {
 		log.Errorf("filterProcsInfo0 procfs.AllProcs err = %v", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	result := make([]*ProcInfo, 0, 16)
+	procsAlwaysIdle := make([]*ProcInfo, 0, 16)
 	l0 := len(procs)
 	for i := 0; i < l0; i++ {
 		proc := procs[i]
@@ -51,10 +52,17 @@ func filterProcsInfo0(filters []*config.ProcFilter, ignore *config.Ignore) ([]*P
 			continue
 		}
 
+		if filterProc(filtersAlwaysIdle, procStat.Comm, cmd0) {
+			// always idle processes
+			procsAlwaysIdle = append(procsAlwaysIdle, &ProcInfo{})
+			continue
+		}
+
 		if !filterProc(filters, procStat.Comm, cmd0) {
 			continue
 		}
 
+		// process to pin
 		procInfo := &ProcInfo{
 			Proc: proc,
 			Stat: procStat,
@@ -97,7 +105,7 @@ func filterProcsInfo0(filters []*config.ProcFilter, ignore *config.Ignore) ([]*P
 		return result[i].Proc.PID < result[j].Proc.PID
 	})
 
-	return result, nil
+	return result, procsAlwaysIdle, nil
 }
 
 // filterProc

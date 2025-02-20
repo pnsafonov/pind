@@ -584,6 +584,28 @@ func (x *PinCpus) getCpusCopy0() *[]int {
 	return result
 }
 
+func pinAlwaysIdle(ctx *Context) error {
+	var err error
+	state := ctx.state
+
+	l0 := len(ctx.alwaysIdle)
+	for i := 0; i < l0; i++ {
+		proc := ctx.alwaysIdle[i]
+
+		l1 := len(proc.Threads)
+		for j := 0; j < l1; j++ {
+			thread := proc.Threads[j]
+
+			err0 := schedSetAffinity(thread.Stat, &state.Idle.CpuSet)
+			if err0 != nil {
+				err = err0
+			}
+		}
+	}
+
+	return err
+}
+
 func pinNotInFilterToIdle(ctx *Context) error {
 	var err error
 	state := ctx.state

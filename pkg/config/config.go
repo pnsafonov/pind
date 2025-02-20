@@ -35,16 +35,17 @@ type Rotator struct {
 }
 
 type Service struct {
-	Interval     int           `yaml:"interval"` // ms
-	Threshold    float64       `yaml:"threshold"`
-	IdleOverwork float64       `yaml:"idle_overwork"`
-	Filters0     []*ProcFilter `yaml:"filters0"`
-	Filters1     []*ProcFilter `yaml:"filters1"`
-	Pool         Pool          `yaml:"pool"`
-	Selection    Selection     `yaml:"selection"`
-	PinCoresAlgo *PinCoresAlgo `yaml:"pin_cores_algo"`
-	Ignore       *Ignore       `yaml:"ignore"`
-	HttpApi      *HttpApi      `yaml:"http_api"`
+	Interval          int           `yaml:"interval"` // ms
+	Threshold         float64       `yaml:"threshold"`
+	IdleOverwork      float64       `yaml:"idle_overwork"`
+	Filters0          []*ProcFilter `yaml:"filters0"`
+	Filters1          []*ProcFilter `yaml:"filters1"`
+	FiltersAlwaysIdle []*ProcFilter `yaml:"filters_always_idle"`
+	Pool              Pool          `yaml:"pool"`
+	Selection         Selection     `yaml:"selection"`
+	PinCoresAlgo      *PinCoresAlgo `yaml:"pin_cores_algo"`
+	Ignore            *Ignore       `yaml:"ignore"`
+	HttpApi           *HttpApi      `yaml:"http_api"`
 }
 
 type Pool struct {

@@ -59,6 +59,10 @@ func TestLog2(t *testing.T) {
 		t.FailNow()
 	}
 
+	if !reflect.DeepEqual(config.Service.FiltersAlwaysIdle[0].Patterns, []string{"node_exporter"}) {
+		t.FailNow()
+	}
+
 	if config.Service.Pool.PinMode != PinModeDelayed {
 		t.FailNow()
 	}

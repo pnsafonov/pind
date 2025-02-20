@@ -213,7 +213,10 @@ func initDefaultLogicalPoolConfig(config0 *config.Config) error {
 }
 
 func initDefaultFiltersConfig(config0 *config.Config) error {
-	if len(config0.Service.Filters0) != 0 && len(config0.Service.Filters1) != 0 {
+	l0 := len(config0.Service.Filters0)
+	l1 := len(config0.Service.Filters1)
+	l2 := len(config0.Service.FiltersAlwaysIdle)
+	if l0 != 0 && l1 != 0 && l2 != 0 {
 		return nil
 	}
 
@@ -224,8 +227,12 @@ func initDefaultFiltersConfig(config0 *config.Config) error {
 	filters0 := config.NewDefaultFilters2(paths0)
 	filters1 := config.NewDefaultFilters2(paths0)
 
+	paths1 := []string{"/usr/local/bin/node_exporter"}
+	pathsAlways := config.NewDefaultFilters2(paths1)
+
 	config0.Service.Filters0 = filters0
 	config0.Service.Filters1 = filters1
+	config0.Service.FiltersAlwaysIdle = pathsAlways
 	return nil
 }
 

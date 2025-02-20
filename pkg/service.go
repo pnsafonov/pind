@@ -29,6 +29,7 @@ type Context struct {
 	lastAll         []*ProcInfo
 	lastInFilter    []*ProcInfo
 	lastNotInFilter []*ProcInfo
+	alwaysIdle      []*ProcInfo
 
 	state PinState
 
@@ -218,6 +219,11 @@ func handler(ctx *Context, time0 time.Time) {
 
 	ctx.state.UpdateProcs(ctx.lastInFilter)
 
+	err6 := pinAlwaysIdle(ctx)
+	if err6 != nil {
+		log.Errorf("handler, pinAlwaysIdle err = %v", err6)
+	}
+
 	err1 := pinNotInFilterToIdle(ctx)
 	if err1 != nil {
 		log.Errorf("handler, pinNotInFilterToIdle err = %v", err1)
@@ -250,10 +256,11 @@ func handler(ctx *Context, time0 time.Time) {
 func calcProcsCPU(ctx *Context, time0 time.Time) error {
 	filters0 := ctx.Config.Service.Filters0
 	filters1 := ctx.Config.Service.Filters1
+	filtersAlwaysIdle := ctx.Config.Service.FiltersAlwaysIdle
 	threshold := ctx.Config.Service.Threshold
 	ignore := ctx.Config.Service.Ignore
 
-	procsAll, err := filterProcsInfo0(filters0, ignore)
+	procsAll, procsAlwaysIdle, err := filterProcsInfo0(filters0, filtersAlwaysIdle, ignore)
 	if err != nil {
 		log.Errorf("calcProcsCPU, filterProcsInfo0 err = %v", err)
 		return err
@@ -301,6 +308,7 @@ func calcProcsCPU(ctx *Context, time0 time.Time) error {
 	ctx.lastInFilter = inFilter
 	ctx.lastNotInFilter = notInFilter
 	//printProcs1(procsAll, time0, timeDelta)
+	ctx.alwaysIdle = procsAlwaysIdle
 
 	return nil
 }
