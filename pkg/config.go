@@ -227,7 +227,7 @@ func initDefaultFiltersConfig(config0 *config.Config) error {
 	filters0 := config.NewDefaultFilters2(paths0)
 	filters1 := config.NewDefaultFilters2(paths0)
 
-	paths1 := []string{"/usr/local/bin/node_exporter"}
+	paths1 := []string{"node_exporter"}
 	pathsAlways := config.NewDefaultFilters2(paths1)
 
 	config0.Service.Filters0 = filters0

@@ -30,6 +30,15 @@ type ThreadInfo struct {
 	Ignored bool // ignore thread: can't sched_getaffinity with any cpu
 }
 
+func NewProcInfo(proc procfs.Proc, procStat procfs.ProcStat, cmd0 []string) *ProcInfo {
+	procInfo := &ProcInfo{
+		Proc: proc,
+		Stat: procStat,
+		Cmd:  cmd0,
+	}
+	return procInfo
+}
+
 func filterProcsInfo0(filters []*config.ProcFilter, filtersAlwaysIdle []*config.ProcFilter, ignore *config.Ignore) ([]*ProcInfo, []*ProcInfo, error) {
 	procs, err := procfs.AllProcs()
 	if err != nil {
@@ -54,50 +63,23 @@ func filterProcsInfo0(filters []*config.ProcFilter, filtersAlwaysIdle []*config.
 
 		if filterProc(filtersAlwaysIdle, procStat.Comm, cmd0) {
 			// always idle processes
-			procsAlwaysIdle = append(procsAlwaysIdle, &ProcInfo{})
+			procInfo := NewProcInfo(proc, procStat, cmd0)
+			err = procInfoAddThreads(proc, procInfo, nil)
+			if err == nil {
+				procsAlwaysIdle = append(procsAlwaysIdle, procInfo)
+			}
 			continue
 		}
 
-		if !filterProc(filters, procStat.Comm, cmd0) {
-			continue
-		}
-
-		// process to pin
-		procInfo := &ProcInfo{
-			Proc: proc,
-			Stat: procStat,
-			Cmd:  cmd0,
-		}
-		result = append(result, procInfo)
-
-		threads, err0 := procfs.AllThreads(proc.PID)
-		if err0 != nil {
-			continue
-		}
-		l1 := len(threads)
-		for j := 0; j < l1; j++ {
-			thread := threads[j]
-			threadStat, err1 := thread.Stat()
-			if err1 != nil {
-				continue
+		if filterProc(filters, procStat.Comm, cmd0) {
+			// process to pin
+			procInfo := NewProcInfo(proc, procStat, cmd0)
+			err = procInfoAddThreads(proc, procInfo, ignore)
+			if err == nil {
+				result = append(result, procInfo)
 			}
-
-			ignored := isIgnored(threadStat.Comm, ignore)
-
-			threadInfo := &ThreadInfo{
-				Thread:  thread,
-				Stat:    threadStat,
-				Ignored: ignored,
-			}
-			// sched_getaffinity
-			err1 = unix.SchedGetaffinity(threadStat.PID, &threadInfo.CpuSet)
-			if err1 != nil {
-				continue
-			}
-
-			procInfo.Threads = append(procInfo.Threads, threadInfo)
+			//continue
 		}
-
 	}
 
 	// sort by id
@@ -106,6 +88,37 @@ func filterProcsInfo0(filters []*config.ProcFilter, filtersAlwaysIdle []*config.
 	})
 
 	return result, procsAlwaysIdle, nil
+}
+
+func procInfoAddThreads(proc procfs.Proc, procInfo *ProcInfo, ignore *config.Ignore) error {
+	threads, err0 := procfs.AllThreads(proc.PID)
+	if err0 != nil {
+		return err0
+	}
+	l1 := len(threads)
+	for j := 0; j < l1; j++ {
+		thread := threads[j]
+		threadStat, err1 := thread.Stat()
+		if err1 != nil {
+			return err1
+		}
+
+		ignored := isIgnored(threadStat.Comm, ignore)
+
+		threadInfo := &ThreadInfo{
+			Thread:  thread,
+			Stat:    threadStat,
+			Ignored: ignored,
+		}
+		// sched_getaffinity
+		err1 = unix.SchedGetaffinity(threadStat.PID, &threadInfo.CpuSet)
+		if err1 != nil {
+			return err1
+		}
+
+		procInfo.Threads = append(procInfo.Threads, threadInfo)
+	}
+	return nil
 }
 
 // filterProc

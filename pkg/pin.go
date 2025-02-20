@@ -596,6 +596,10 @@ func pinAlwaysIdle(ctx *Context) error {
 		for j := 0; j < l1; j++ {
 			thread := proc.Threads[j]
 
+			if isMasksEqual(state.Idle.CpuSet, thread.CpuSet) {
+				continue
+			}
+
 			err0 := schedSetAffinity(thread.Stat, &state.Idle.CpuSet)
 			if err0 != nil {
 				err = err0

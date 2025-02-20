@@ -265,6 +265,7 @@ func calcProcsCPU(ctx *Context, time0 time.Time) error {
 		log.Errorf("calcProcsCPU, filterProcsInfo0 err = %v", err)
 		return err
 	}
+	ctx.alwaysIdle = procsAlwaysIdle
 	setTime(procsAll, time0)
 	//printProcs0(procsAll, time0)
 
@@ -308,7 +309,6 @@ func calcProcsCPU(ctx *Context, time0 time.Time) error {
 	ctx.lastInFilter = inFilter
 	ctx.lastNotInFilter = notInFilter
 	//printProcs1(procsAll, time0, timeDelta)
-	ctx.alwaysIdle = procsAlwaysIdle
 
 	return nil
 }
