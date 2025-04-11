@@ -16,6 +16,8 @@ type ProcInfo struct {
 	Cmd     []string
 	Threads []*ThreadInfo
 
+	VmName string
+
 	time time.Time
 	cpu0 float64
 	load bool
@@ -86,6 +88,14 @@ func filterProcsInfo0(filters []*config.ProcFilter, filtersAlwaysIdle []*config.
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Proc.PID < result[j].Proc.PID
 	})
+
+	// init virtual machine name
+	for _, procInfo := range result {
+		vmName, ok := parseVmName(procInfo.Cmd)
+		if ok {
+			procInfo.VmName = vmName
+		}
+	}
 
 	return result, procsAlwaysIdle, nil
 }

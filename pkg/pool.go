@@ -136,7 +136,11 @@ func NewPool(config0 config.Pool) (*Pool, error) {
 }
 
 // getNumaNodeForLoadAssign - search for numa node changing starting node
-func (x *Pool) getNumaNodeForLoadAssign(requiredCountPhys int, requiredCount int) (*PoolNodeInfo, bool) {
+func (x *Pool) getNumaNodeForLoadAssign(requiredCountPhys int, requiredCount int, nodeIndex int) (*PoolNodeInfo, bool) {
+	if nodeIndex >= 0 {
+		return x.Nodes[nodeIndex], true
+	}
+
 	if x.Config.LoadType == config.Phys {
 		return x.getNumaNodeForLoadAssignPhys(requiredCountPhys, requiredCount)
 	}

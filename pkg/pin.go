@@ -29,7 +29,9 @@ var (
 type PinState struct {
 	Procs  map[int]*PinProc // pid -> PinProc, add/remove/change processes
 	Idle   PinCpus          // mask for idle threads
-	Errors *Errors
+	Errors *Errors          //
+	// PinMap - orders to direct mapping
+	PinMap *PinMap
 }
 
 type PinProc struct {
@@ -83,9 +85,11 @@ func NewIdlePinCpu(ctx *Context) PinCpus {
 }
 
 func NewPinState() PinState {
+	pinMap := NewPinMap()
 	state := PinState{
 		Procs:  make(map[int]*PinProc),
 		Errors: &Errors{},
+		PinMap: pinMap,
 	}
 	return state
 }
@@ -407,7 +411,10 @@ func (x *PinState) PinLoad(ctx *Context) error {
 
 		node := procInfo.Node
 		if node == nil {
-			node0, ok := pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount)
+			// direct numa node selection
+			nodeIndex, _ := x.PinMap.GetNumaNode(procInfo.ProcInfo.VmName)
+
+			node0, ok := pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount, nodeIndex)
 			if !ok {
 				if ctx.Config.Service.Pool.PinMode == config.PinModeDelayed {
 					// evict delayed vms to idle cores
@@ -417,7 +424,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 						continue
 					}
 					// second attempt after clean delayed
-					node0, ok = pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount)
+					node0, ok = pool.getNumaNodeForLoadAssign(cpuCountPhys, cpuCount, nodeIndex)
 				}
 				if !ok {
 					vmName, _ := parseVmName(procInfo.ProcInfo.Cmd)

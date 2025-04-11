@@ -47,7 +47,7 @@ func loadConfigAndInit(ctx *Context) error {
 	ctx.state = NewPinState()
 	ctx.state.Idle = NewIdlePinCpu(ctx)
 
-	ctx.HttpApi = http_api.NewHttpApi(config0.Service.HttpApi)
+	ctx.HttpApi = http_api.NewHttpApi(ctx, config0.Service.HttpApi)
 
 	return nil
 }

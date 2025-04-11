@@ -489,3 +489,27 @@ func calcPoolCoresLoad(poolCores map[int]*PoolCore, cpuInfo *numa.Info) (float64
 
 	return load, load1, loadFull
 }
+
+func (x *Context) AddPinMapping(vmName string, numa int) error {
+	l0 := len(x.pool.Nodes)
+	if numa < 0 {
+		return fmt.Errorf("numa is negative")
+	}
+	if numa > l0 {
+		return fmt.Errorf("max node is %d", l0-1)
+	}
+	x.state.PinMap.AddPinMapping(vmName, numa)
+	return nil
+}
+
+func (x *Context) GetPinMapping() map[string]int {
+	return x.state.PinMap.Clone0()
+}
+
+func (x *Context) Remove(vmName string) {
+	x.state.PinMap.Remove(vmName)
+}
+
+func (x *Context) Clean() {
+	x.state.PinMap.Clean()
+}

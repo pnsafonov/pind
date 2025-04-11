@@ -1,7 +1,7 @@
 ---
 log:
     level: info
-    rotator_enabled: true
+    rotator_enabled: false
     rotator:
         file_name: /var/log/pind/pind.log
         max_size: 10
