@@ -35,8 +35,8 @@ func WriteResponse0(w http.ResponseWriter, code int, message string) {
 		return
 	}
 
-	_, _ = w.Write(bytes0)
 	w.WriteHeader(code)
+	_, _ = w.Write(bytes0)
 }
 
 func WriteResponse1(w http.ResponseWriter, data interface{}) error {

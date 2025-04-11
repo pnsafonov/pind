@@ -6,6 +6,7 @@ import (
 	"github.com/pnsafonov/pind/pkg/ali"
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/utils/http_utils"
+	"github.com/pnsafonov/pind/pkg/utils/str_utils"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
@@ -124,14 +125,14 @@ func (x *HttpApi) pin(w http.ResponseWriter, r *http.Request) {
 
 	vmName := http_utils.GetRequestParam0(r, keysVmName)
 	if vmName == "" {
-		msg := fmt.Sprintf("need to specify argument name with %v", keysVmName)
+		msg := fmt.Sprintf("need to specify argument name with %s", str_utils.Join0(keysVmName))
 		http_utils.WriteResponse0(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	numa0 := http_utils.GetRequestParam0(r, keysNumaIndex)
 	if numa0 == "" {
-		msg := fmt.Sprintf("need to specify argument numa with %v", keysNumaIndex)
+		msg := fmt.Sprintf("need to specify argument numa with %s", str_utils.Join0(keysNumaIndex))
 		http_utils.WriteResponse0(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -175,14 +176,14 @@ func (x *HttpApi) pinRemove(w http.ResponseWriter, r *http.Request) {
 
 	vmName := http_utils.GetRequestParam0(r, keysVmName)
 	if vmName == "" {
-		msg := fmt.Sprintf("need to specify argument name with %v", keysVmName)
+		msg := fmt.Sprintf("need to specify argument name with %s", str_utils.Join0(keysVmName))
 		http_utils.WriteResponse0(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	x.Logic.Remove(vmName)
 
-	msg := fmt.Sprintf("pinRemove, removed name = %s, numa = %d", vmName)
+	msg := fmt.Sprintf("pinRemove, removed name = %s", vmName)
 	http_utils.WriteResponse0(w, http.StatusOK, msg)
 }
 

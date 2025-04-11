@@ -495,8 +495,9 @@ func (x *Context) AddPinMapping(vmName string, numa int) error {
 	if numa < 0 {
 		return fmt.Errorf("numa is negative")
 	}
-	if numa > l0 {
-		return fmt.Errorf("max node is %d", l0-1)
+	maxIndex := l0 - 1
+	if numa > maxIndex {
+		return fmt.Errorf("max node is %d", maxIndex)
 	}
 	x.state.PinMap.AddPinMapping(vmName, numa)
 	return nil
