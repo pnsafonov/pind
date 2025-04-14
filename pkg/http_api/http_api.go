@@ -145,8 +145,8 @@ func (x *HttpApi) pin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if numa1 < 0 {
-		log.Errorf("HttpApi pin, negative numa = %d", numa0)
-		msg := fmt.Sprintf("numa is negative, numa = %d", numa0)
+		log.Errorf("HttpApi pin, negative numa = %s", numa0)
+		msg := fmt.Sprintf("numa is negative, numa = %s", numa0)
 		http_utils.WriteResponse0(w, http.StatusBadRequest, msg)
 		return
 	}
