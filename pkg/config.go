@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/http_api"
+	"github.com/pnsafonov/pind/pkg/monitoring"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/pnsafonov/pind/pkg/utils/os_utils"
 	log "github.com/sirupsen/logrus"
@@ -48,6 +49,7 @@ func loadConfigAndInit(ctx *Context) error {
 	ctx.state.Idle = NewIdlePinCpu(ctx)
 
 	ctx.HttpApi = http_api.NewHttpApi(ctx, config0.Service.HttpApi)
+	ctx.Monitoring = monitoring.NewMonitoring(config0.Service.Monitoring)
 
 	return nil
 }

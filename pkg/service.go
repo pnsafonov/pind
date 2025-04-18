@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pnsafonov/pind/pkg/config"
 	"github.com/pnsafonov/pind/pkg/http_api"
+	"github.com/pnsafonov/pind/pkg/monitoring"
 	"github.com/pnsafonov/pind/pkg/numa"
 	"github.com/prometheus/procfs"
 	log "github.com/sirupsen/logrus"
@@ -35,7 +36,8 @@ type Context struct {
 
 	lastCpuInfo *numa.Info
 
-	HttpApi *http_api.HttpApi
+	HttpApi    *http_api.HttpApi
+	Monitoring *monitoring.Monitoring
 
 	Version string
 	GitHash string
@@ -83,6 +85,12 @@ func RunService(ctx *Context) error {
 		return err
 	}
 
+	err = doMonitoring(ctx)
+	if err != nil {
+		log.Errorf("RunService, doMonitoring err = %v", err)
+		return err
+	}
+
 	doSignals(ctx)
 	doLoop(ctx)
 
@@ -122,6 +130,20 @@ func doHttpApi(ctx *Context) error {
 	err := ctx.HttpApi.GoServe()
 	if err != nil {
 		log.Errorf("doHttpApi, ctx.HttpApi.GoServe err = %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func doMonitoring(ctx *Context) error {
+	if !ctx.Config.Service.Monitoring.Enabled {
+		return nil
+	}
+
+	err := ctx.Monitoring.GoServe()
+	if err != nil {
+		log.Errorf("doHttpApi, ctx.Monitoring.GoServe err = %v", err)
 		return err
 	}
 
@@ -250,6 +272,11 @@ func handler(ctx *Context, time0 time.Time) {
 	err4 := setHttpApiData(ctx)
 	if err4 != nil {
 		log.Errorf("handler, setHttpApiData err = %v", err4)
+	}
+
+	err7 := setMonitoringState(ctx)
+	if err7 != nil {
+		log.Errorf("handler, setMonitoringState err = %v", err7)
 	}
 }
 

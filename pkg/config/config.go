@@ -46,6 +46,7 @@ type Service struct {
 	PinCoresAlgo      *PinCoresAlgo `yaml:"pin_cores_algo"`
 	Ignore            *Ignore       `yaml:"ignore"`
 	HttpApi           *HttpApi      `yaml:"http_api"`
+	Monitoring        *Monitoring   `yaml:"monitoring"`
 }
 
 type Pool struct {
@@ -80,6 +81,11 @@ type PinCoresAlgo struct {
 }
 
 type HttpApi struct {
+	Enabled bool   `yaml:"enabled"`
+	Listen  string `yaml:"listen"`
+}
+
+type Monitoring struct {
 	Enabled bool   `yaml:"enabled"`
 	Listen  string `yaml:"listen"`
 }
@@ -162,6 +168,11 @@ func NewDefaultConfig(isService bool) *Config {
 		Listen:  "0.0.0.0:10331",
 	}
 
+	monitoring := &Monitoring{
+		Enabled: true,
+		Listen:  "0.0.0.0:9091",
+	}
+
 	//filters0 := NewDefaultFilters0()
 	//filters1 := NewDefaultFilters1()
 	var filters0 []*ProcFilter
@@ -177,6 +188,7 @@ func NewDefaultConfig(isService bool) *Config {
 		PinCoresAlgo: pinCoresAlgo,
 		Ignore:       ignore,
 		HttpApi:      httpApi,
+		Monitoring:   monitoring,
 	}
 
 	config.Log = log0
