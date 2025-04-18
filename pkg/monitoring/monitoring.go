@@ -12,11 +12,14 @@ import (
 type Monitoring struct {
 	config          *config.Monitoring
 	server          *http.Server
+	gatherer        prometheus.Gatherer
+	registerer      prometheus.Registerer
 	staticCollector *StaticCollector
 }
 
 func NewMonitoring(config *config.Monitoring) *Monitoring {
 	collector := NewStaticCollector()
+
 	ent := &Monitoring{
 		config:          config,
 		staticCollector: collector,
@@ -31,7 +34,17 @@ func (x *Monitoring) serve(l net.Listener) {
 func (x *Monitoring) GoServe() error {
 	addr := x.config.Listen
 
-	err := prometheus.Register(x.staticCollector)
+	// включение Go-шных метрик
+	if x.config.GoMetricsEnabled {
+		x.gatherer = prometheus.DefaultGatherer
+		x.registerer = prometheus.DefaultRegisterer
+	} else {
+		reg := prometheus.NewRegistry()
+		x.gatherer = reg
+		x.registerer = reg
+	}
+
+	err := x.registerer.Register(x.staticCollector)
 	if err != nil {
 		log.Errorf("GoServe, prometheus.Register err: %v", err)
 		return err
@@ -43,8 +56,13 @@ func (x *Monitoring) GoServe() error {
 		return err
 	}
 
+	handlerOptions := promhttp.HandlerOpts{
+		//EnableOpenMetrics: false,
+	}
+	handler := promhttp.HandlerFor(x.gatherer, handlerOptions)
+
 	mux := http.NewServeMux()
-	mux.Handle("/console/metrics", promhttp.Handler())
+	mux.Handle("/console/metrics", handler)
 	x.server = &http.Server{
 		Handler: mux,
 	}

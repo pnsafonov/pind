@@ -86,8 +86,9 @@ type HttpApi struct {
 }
 
 type Monitoring struct {
-	Enabled bool   `yaml:"enabled"`
-	Listen  string `yaml:"listen"`
+	Enabled          bool   `yaml:"enabled"`
+	Listen           string `yaml:"listen"`
+	GoMetricsEnabled bool   `yaml:"go_metrics_enabled"`
 }
 
 func NewDefaultFilters0() []*ProcFilter {
@@ -169,8 +170,9 @@ func NewDefaultConfig(isService bool) *Config {
 	}
 
 	monitoring := &Monitoring{
-		Enabled: true,
-		Listen:  "0.0.0.0:9091",
+		Enabled:          true,
+		Listen:           "0.0.0.0:9091",
+		GoMetricsEnabled: false,
 	}
 
 	//filters0 := NewDefaultFilters0()
