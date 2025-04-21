@@ -49,7 +49,8 @@ func loadConfigAndInit(ctx *Context) error {
 	ctx.state.Idle = NewIdlePinCpu(ctx)
 
 	ctx.HttpApi = http_api.NewHttpApi(ctx, config0.Service.HttpApi)
-	ctx.Monitoring = monitoring.NewMonitoring(config0.Service.Monitoring)
+	numaNodesCount := len(pool.Nodes)
+	ctx.Monitoring = monitoring.NewMonitoring(config0.Service.Monitoring, numaNodesCount)
 
 	return nil
 }

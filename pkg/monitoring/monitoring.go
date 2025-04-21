@@ -17,8 +17,8 @@ type Monitoring struct {
 	staticCollector *StaticCollector
 }
 
-func NewMonitoring(config *config.Monitoring) *Monitoring {
-	collector := NewStaticCollector()
+func NewMonitoring(config *config.Monitoring, numaNodesCount int) *Monitoring {
+	collector := NewStaticCollector(numaNodesCount)
 
 	ent := &Monitoring{
 		config:          config,
