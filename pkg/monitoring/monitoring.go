@@ -62,7 +62,7 @@ func (x *Monitoring) GoServe() error {
 	handler := promhttp.HandlerFor(x.gatherer, handlerOptions)
 
 	mux := http.NewServeMux()
-	mux.Handle("/console/metrics", handler)
+	mux.Handle("/metrics", handler)
 	x.server = &http.Server{
 		Handler: mux,
 	}
