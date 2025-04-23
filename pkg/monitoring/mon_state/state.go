@@ -1,10 +1,12 @@
-package monitoring
+package mon_state
 
 import "time"
 
 type State struct {
 	Time time.Time
 	Pool *Pool
+	//Procs []*Proc
+	Procs map[string]*Proc
 }
 
 type Pool struct {
@@ -26,12 +28,28 @@ type PoolNode struct {
 	LoadUsed1 float64
 }
 
+type Proc struct {
+	VmName string
+	Time   time.Time
+	CPU    float64
+	Load   bool
+	Numa0  int
+}
+
 func NewState() *State {
 	now := time.Now()
 	pool := &Pool{}
 
 	return &State{
-		Time: now,
-		Pool: pool,
+		Time:  now,
+		Pool:  pool,
+		Procs: make(map[string]*Proc),
 	}
+}
+
+func (x *Proc) GetLoad0() float64 {
+	if x.Load {
+		return 1
+	}
+	return 0
 }

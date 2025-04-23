@@ -261,6 +261,15 @@ func getThreadsCount0(threads map[int]*PinThread, selection ThreadSelection) int
 	return count
 }
 
+// GetNuma0 - returns assigned numa index.
+// If no numa assigned returns -1.
+func (x *PinProc) GetNuma0() int {
+	if x.Node == nil {
+		return -1
+	}
+	return x.Node.Index
+}
+
 func (x *PinProc) ContainsThread(selection ThreadSelection) bool {
 	procInfo := x
 	for _, threadInfo := range procInfo.Threads {

@@ -1,6 +1,8 @@
 package pkg
 
-import "github.com/pnsafonov/pind/pkg/monitoring"
+import (
+	"github.com/pnsafonov/pind/pkg/monitoring/mon_state"
+)
 
 func setMonitoringState(ctx *Context) error {
 	state := fillMonitoringState(ctx)
@@ -8,8 +10,8 @@ func setMonitoringState(ctx *Context) error {
 	return nil
 }
 
-func fillMonitoringState(ctx *Context) *monitoring.State {
-	state := monitoring.NewState()
+func fillMonitoringState(ctx *Context) *mon_state.State {
+	state := mon_state.NewState()
 
 	state.Pool.IdleLoad0 = ctx.pool.IdleLoad0
 	state.Pool.IdleLoad1 = ctx.pool.IdleLoad1
@@ -22,7 +24,7 @@ func fillMonitoringState(ctx *Context) *monitoring.State {
 	for i := 0; i < l0; i++ {
 		node := ctx.pool.Nodes[i]
 
-		nodeMon := &monitoring.PoolNode{
+		nodeMon := &mon_state.PoolNode{
 			Index:     i,
 			LoadFree0: node.LoadFree0,
 			LoadFree1: node.LoadFree1,
@@ -30,6 +32,23 @@ func fillMonitoringState(ctx *Context) *monitoring.State {
 			LoadUsed1: node.LoadUsed1,
 		}
 		state.Pool.Nodes = append(state.Pool.Nodes, nodeMon)
+	}
+
+	for _, pinProc := range ctx.state.Procs {
+		if pinProc.ProcInfo.VmName == "" {
+			continue
+		}
+
+		numa0 := pinProc.GetNuma0()
+		proc := &mon_state.Proc{
+			VmName: pinProc.ProcInfo.VmName,
+			Time:   state.Time,
+			CPU:    pinProc.ProcInfo.cpu0,
+			Load:   pinProc.ProcInfo.load,
+			Numa0:  numa0,
+		}
+
+		state.Procs[pinProc.ProcInfo.VmName] = proc
 	}
 
 	return state

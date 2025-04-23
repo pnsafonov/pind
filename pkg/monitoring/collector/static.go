@@ -1,17 +1,20 @@
-package monitoring
+package collector
 
 import (
+	"github.com/pnsafonov/pind/pkg/monitoring/mon_state"
 	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
 )
 
-type StaticCollector struct {
-	PoolCollector *PoolCollector
+// Static - статический Collector, регистрируется при старте
+// далее для него не делается unregister
+type Static struct {
+	PoolCollector *Pool
 
-	State *State
+	State *mon_state.State
 }
 
-type PoolCollector struct {
+type Pool struct {
 	IdleLoad0 *prometheus.Desc
 	IdleLoad1 *prometheus.Desc
 	LoadFree0 *prometheus.Desc
@@ -19,10 +22,10 @@ type PoolCollector struct {
 	LoadUsed0 *prometheus.Desc
 	LoadUsed1 *prometheus.Desc
 
-	Nodes []*PoolNodeCollector
+	Nodes []*PoolNode
 }
 
-type PoolNodeCollector struct {
+type PoolNode struct {
 	Index     int
 	LoadFree0 *prometheus.Desc
 	LoadFree1 *prometheus.Desc
@@ -30,8 +33,8 @@ type PoolNodeCollector struct {
 	LoadUsed1 *prometheus.Desc
 }
 
-func NewPoolCollector(nodesCount int) *PoolCollector {
-	ent := &PoolCollector{}
+func NewPool(nodesCount int) *Pool {
+	ent := &Pool{}
 
 	ent.IdleLoad0 = prometheus.NewDesc("pind_pool_idle_load0",
 		"idle cores load, like 400, 600, 800 %",
@@ -59,7 +62,7 @@ func NewPoolCollector(nodesCount int) *PoolCollector {
 	)
 
 	for i := 0; i < nodesCount; i++ {
-		node := &PoolNodeCollector{
+		node := &PoolNode{
 			Index: i,
 		}
 
@@ -90,17 +93,17 @@ func NewPoolCollector(nodesCount int) *PoolCollector {
 	return ent
 }
 
-func NewStaticCollector(nodesCount int) *StaticCollector {
-	pool := NewPoolCollector(nodesCount)
+func NewStatic(nodesCount int) *Static {
+	pool := NewPool(nodesCount)
 
-	ent := &StaticCollector{
+	ent := &Static{
 		PoolCollector: pool,
 	}
 
 	return ent
 }
 
-func (x *StaticCollector) Describe(ch chan<- *prometheus.Desc) {
+func (x *Static) Describe(ch chan<- *prometheus.Desc) {
 	ch <- x.PoolCollector.IdleLoad0
 	ch <- x.PoolCollector.IdleLoad1
 	ch <- x.PoolCollector.LoadFree0
@@ -117,7 +120,7 @@ func (x *StaticCollector) Describe(ch chan<- *prometheus.Desc) {
 
 }
 
-func (x *StaticCollector) Collect(ch chan<- prometheus.Metric) {
+func (x *Static) Collect(ch chan<- prometheus.Metric) {
 	m0 := prometheus.MustNewConstMetric(x.PoolCollector.IdleLoad0, prometheus.GaugeValue, x.State.Pool.IdleLoad0)
 	m1 := prometheus.MustNewConstMetric(x.PoolCollector.IdleLoad1, prometheus.GaugeValue, x.State.Pool.IdleLoad1)
 	m2 := prometheus.MustNewConstMetric(x.PoolCollector.LoadFree0, prometheus.GaugeValue, x.State.Pool.LoadFree0)
