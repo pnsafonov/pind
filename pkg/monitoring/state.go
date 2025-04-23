@@ -1,6 +1,9 @@
 package monitoring
 
+import "time"
+
 type State struct {
+	Time time.Time
 	Pool *Pool
 }
 
@@ -24,9 +27,11 @@ type PoolNode struct {
 }
 
 func NewState() *State {
+	now := time.Now()
 	pool := &Pool{}
 
 	return &State{
-		pool,
+		Time: now,
+		Pool: pool,
 	}
 }

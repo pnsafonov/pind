@@ -3,7 +3,6 @@ package monitoring
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
-	"time"
 )
 
 type StaticCollector struct {
@@ -34,28 +33,28 @@ type PoolNodeCollector struct {
 func NewPoolCollector(nodesCount int) *PoolCollector {
 	ent := &PoolCollector{}
 
-	ent.IdleLoad0 = prometheus.NewDesc("pool_idle_load0",
-		"400, 600, 800 %",
+	ent.IdleLoad0 = prometheus.NewDesc("pind_pool_idle_load0",
+		"idle cores load, like 400, 600, 800 %",
 		nil, nil,
 	)
-	ent.IdleLoad1 = prometheus.NewDesc("pool_idle_load1",
-		"0-100 %",
+	ent.IdleLoad1 = prometheus.NewDesc("pind_pool_idle_load1",
+		"idle cores load, like 0-100 %",
 		nil, nil,
 	)
-	ent.LoadFree0 = prometheus.NewDesc("pool_load_free0",
-		"400, 600, 800 %",
+	ent.LoadFree0 = prometheus.NewDesc("pind_pool_load_free0",
+		"free cores load, like 400, 600, 800 %",
 		nil, nil,
 	)
-	ent.LoadFree1 = prometheus.NewDesc("pool_load_free1",
-		"0-100 %",
+	ent.LoadFree1 = prometheus.NewDesc("pind_pool_load_free1",
+		"free cores load, like 0-100 %",
 		nil, nil,
 	)
-	ent.LoadUsed0 = prometheus.NewDesc("pool_load_used0",
-		"400, 600, 800 %",
+	ent.LoadUsed0 = prometheus.NewDesc("pind_pool_load_used0",
+		"used cores load, like 400, 600, 800 %",
 		nil, nil,
 	)
-	ent.LoadUsed1 = prometheus.NewDesc("pool_load_used1",
-		"0-100 %",
+	ent.LoadUsed1 = prometheus.NewDesc("pind_pool_load_used1",
+		"used cores load, like 0-100 %",
 		nil, nil,
 	)
 
@@ -68,20 +67,20 @@ func NewPoolCollector(nodesCount int) *PoolCollector {
 			"node": strconv.Itoa(i),
 		}
 
-		node.LoadFree0 = prometheus.NewDesc("node_load_free0",
-			"400, 600, 800 %",
+		node.LoadFree0 = prometheus.NewDesc("pind_node_load_free0",
+			"node free cores load, like 400, 600, 800 %",
 			nil, labels0,
 		)
-		node.LoadFree1 = prometheus.NewDesc("node_load_free1",
-			"0-100 %",
+		node.LoadFree1 = prometheus.NewDesc("pind_node_load_free1",
+			"node free cores load, like 0-100 %",
 			nil, labels0,
 		)
-		node.LoadUsed0 = prometheus.NewDesc("node_load_used0",
-			"400, 600, 800 %",
+		node.LoadUsed0 = prometheus.NewDesc("pind_node_load_used0",
+			"node used cores load, like 400, 600, 800 %",
 			nil, labels0,
 		)
-		node.LoadUsed1 = prometheus.NewDesc("node_load_used1",
-			"0-100 %",
+		node.LoadUsed1 = prometheus.NewDesc("pind_node_load_used1",
+			"node used cores load, like 0-100 %",
 			nil, labels0,
 		)
 
@@ -126,13 +125,13 @@ func (x *StaticCollector) Collect(ch chan<- prometheus.Metric) {
 	m4 := prometheus.MustNewConstMetric(x.PoolCollector.LoadUsed0, prometheus.GaugeValue, x.State.Pool.LoadUsed0)
 	m5 := prometheus.MustNewConstMetric(x.PoolCollector.LoadUsed1, prometheus.GaugeValue, x.State.Pool.LoadUsed1)
 
-	now := time.Now()
-	mt0 := prometheus.NewMetricWithTimestamp(now, m0)
-	mt1 := prometheus.NewMetricWithTimestamp(now, m1)
-	mt2 := prometheus.NewMetricWithTimestamp(now, m2)
-	mt3 := prometheus.NewMetricWithTimestamp(now, m3)
-	mt4 := prometheus.NewMetricWithTimestamp(now, m4)
-	mt5 := prometheus.NewMetricWithTimestamp(now, m5)
+	t0 := x.State.Time
+	mt0 := prometheus.NewMetricWithTimestamp(t0, m0)
+	mt1 := prometheus.NewMetricWithTimestamp(t0, m1)
+	mt2 := prometheus.NewMetricWithTimestamp(t0, m2)
+	mt3 := prometheus.NewMetricWithTimestamp(t0, m3)
+	mt4 := prometheus.NewMetricWithTimestamp(t0, m4)
+	mt5 := prometheus.NewMetricWithTimestamp(t0, m5)
 
 	ch <- mt0
 	ch <- mt1
@@ -152,10 +151,10 @@ func (x *StaticCollector) Collect(ch chan<- prometheus.Metric) {
 		mn2 := prometheus.MustNewConstMetric(nodeCollector.LoadUsed0, prometheus.GaugeValue, node.LoadUsed0)
 		mn3 := prometheus.MustNewConstMetric(nodeCollector.LoadUsed1, prometheus.GaugeValue, node.LoadUsed1)
 
-		mnt0 := prometheus.NewMetricWithTimestamp(now, mn0)
-		mnt1 := prometheus.NewMetricWithTimestamp(now, mn1)
-		mnt2 := prometheus.NewMetricWithTimestamp(now, mn2)
-		mnt3 := prometheus.NewMetricWithTimestamp(now, mn3)
+		mnt0 := prometheus.NewMetricWithTimestamp(t0, mn0)
+		mnt1 := prometheus.NewMetricWithTimestamp(t0, mn1)
+		mnt2 := prometheus.NewMetricWithTimestamp(t0, mn2)
+		mnt3 := prometheus.NewMetricWithTimestamp(t0, mn3)
 
 		ch <- mnt0
 		ch <- mnt1
