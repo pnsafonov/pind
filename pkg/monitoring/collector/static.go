@@ -163,15 +163,21 @@ func (x *Static) Collect(ch chan<- prometheus.Metric) {
 		mn1 := prometheus.MustNewConstMetric(nodeCollector.LoadFree1, prometheus.GaugeValue, node.LoadFree1)
 		mn2 := prometheus.MustNewConstMetric(nodeCollector.LoadUsed0, prometheus.GaugeValue, node.LoadUsed0)
 		mn3 := prometheus.MustNewConstMetric(nodeCollector.LoadUsed1, prometheus.GaugeValue, node.LoadUsed1)
+		mn4 := prometheus.MustNewConstMetric(nodeCollector.LoadFreeCount, prometheus.GaugeValue, node.LoadFreeCount)
+		mn5 := prometheus.MustNewConstMetric(nodeCollector.LoadUsedCount, prometheus.GaugeValue, node.LoadUsedCount)
 
 		mnt0 := prometheus.NewMetricWithTimestamp(t0, mn0)
 		mnt1 := prometheus.NewMetricWithTimestamp(t0, mn1)
 		mnt2 := prometheus.NewMetricWithTimestamp(t0, mn2)
 		mnt3 := prometheus.NewMetricWithTimestamp(t0, mn3)
+		mnt4 := prometheus.NewMetricWithTimestamp(t0, mn4)
+		mnt5 := prometheus.NewMetricWithTimestamp(t0, mn5)
 
 		ch <- mnt0
 		ch <- mnt1
 		ch <- mnt2
 		ch <- mnt3
+		ch <- mnt4
+		ch <- mnt5
 	}
 }
