@@ -24,12 +24,16 @@ func fillMonitoringState(ctx *Context) *mon_state.State {
 	for i := 0; i < l0; i++ {
 		node := ctx.pool.Nodes[i]
 
+		l1 := len(node.LoadFree)
+		l2 := len(node.LoadUsed)
 		nodeMon := &mon_state.PoolNode{
-			Index:     i,
-			LoadFree0: node.LoadFree0,
-			LoadFree1: node.LoadFree1,
-			LoadUsed0: node.LoadUsed0,
-			LoadUsed1: node.LoadUsed1,
+			Index:         i,
+			LoadFree0:     node.LoadFree0,
+			LoadFree1:     node.LoadFree1,
+			LoadUsed0:     node.LoadUsed0,
+			LoadUsed1:     node.LoadUsed1,
+			LoadFreeCount: float64(l1),
+			LoadUsedCount: float64(l2),
 		}
 		state.Pool.Nodes = append(state.Pool.Nodes, nodeMon)
 	}

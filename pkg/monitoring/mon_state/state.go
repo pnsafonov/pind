@@ -21,11 +21,13 @@ type Pool struct {
 }
 
 type PoolNode struct {
-	Index     int
-	LoadFree0 float64
-	LoadFree1 float64
-	LoadUsed0 float64
-	LoadUsed1 float64
+	Index         int
+	LoadFree0     float64
+	LoadFree1     float64
+	LoadUsed0     float64
+	LoadUsed1     float64
+	LoadFreeCount float64
+	LoadUsedCount float64
 }
 
 type Proc struct {

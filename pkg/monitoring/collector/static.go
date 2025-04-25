@@ -26,11 +26,13 @@ type Pool struct {
 }
 
 type PoolNode struct {
-	Index     int
-	LoadFree0 *prometheus.Desc
-	LoadFree1 *prometheus.Desc
-	LoadUsed0 *prometheus.Desc
-	LoadUsed1 *prometheus.Desc
+	Index         int
+	LoadFree0     *prometheus.Desc
+	LoadFree1     *prometheus.Desc
+	LoadUsed0     *prometheus.Desc
+	LoadUsed1     *prometheus.Desc
+	LoadFreeCount *prometheus.Desc
+	LoadUsedCount *prometheus.Desc
 }
 
 func NewPool(nodesCount int) *Pool {
@@ -84,6 +86,14 @@ func NewPool(nodesCount int) *Pool {
 		)
 		node.LoadUsed1 = prometheus.NewDesc("pind_node_load_used1",
 			"node used cores load, like 0-100 %",
+			nil, labels0,
+		)
+		node.LoadFreeCount = prometheus.NewDesc("pind_node_load_free_count",
+			"free cpu cores count of numa node",
+			nil, labels0,
+		)
+		node.LoadUsedCount = prometheus.NewDesc("pind_node_load_used_count",
+			"used cpu cores count of numa node",
 			nil, labels0,
 		)
 

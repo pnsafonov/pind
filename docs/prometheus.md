@@ -55,6 +55,12 @@ pind_node_load_free0{instance="micronode15:9091", job="pind", node="0"}
 
 `pind_node_load_used1` - тоже самое, что и `pind_node_load_used0` только максимум 100%.
 
+`pind_node_load_free_count` - число неиспользуемых ядер NUMA ноды.    
+Целые числа.
+
+`pind_node_load_used_count` - число используемых ядер NUMA ноды.   
+Целые числа.
+
 ### Метрики виртуалных машин
 
 `pind_vm_cpu` - потребление процессорного времени виртуальной машиной.   
