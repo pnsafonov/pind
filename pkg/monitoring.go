@@ -45,11 +45,14 @@ func fillMonitoringState(ctx *Context) *mon_state.State {
 
 		numa0 := pinProc.GetNuma0()
 		proc := &mon_state.Proc{
-			VmName: pinProc.ProcInfo.VmName,
-			Time:   state.Time,
-			CPU:    pinProc.ProcInfo.cpu0,
-			Load:   pinProc.ProcInfo.load,
-			Numa0:  numa0,
+			VmName:            pinProc.ProcInfo.VmName,
+			Time:              state.Time,
+			CPU:               pinProc.ProcInfo.cpu0,
+			Load:              pinProc.ProcInfo.load,
+			Numa0:             numa0,
+			RequiredCoresPhys: pinProc.RequiredCoresPhys,
+			RequiredCores:     pinProc.RequiredCores,
+			AssignedCores:     pinProc.AssignedCores,
 		}
 
 		state.Procs[pinProc.ProcInfo.VmName] = proc

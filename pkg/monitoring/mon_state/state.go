@@ -31,11 +31,14 @@ type PoolNode struct {
 }
 
 type Proc struct {
-	VmName string
-	Time   time.Time
-	CPU    float64
-	Load   bool
-	Numa0  int
+	VmName            string
+	Time              time.Time
+	CPU               float64
+	Load              bool
+	Numa0             int
+	RequiredCoresPhys int
+	RequiredCores     int
+	AssignedCores     int
 }
 
 func NewState() *State {

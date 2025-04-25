@@ -41,6 +41,10 @@ type PinProc struct {
 	Threads     map[int]*PinThread // pid -> PinThread, add/remove/update
 	Node        *PoolNodeInfo      // process pinned to numa node
 	NotSelected PinCpus            // cores for not selected threads
+
+	RequiredCoresPhys int
+	RequiredCores     int
+	AssignedCores     int // actually pined cores count
 }
 
 type PinThread struct {
@@ -196,6 +200,12 @@ func getThreadByPID(threads []*ThreadInfo, pid int) (*ThreadInfo, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (x *PinProc) resetAssignedCoresMetrics() {
+	//x.RequiredCoresPhys = 0
+	//x.RequiredCoresPhys = 0
+	x.AssignedCores = 0
 }
 
 func (x *PinProc) UpdateProc(proc *ProcInfo, state *PinState) {
@@ -376,6 +386,7 @@ func (x *PinState) PinIdle() error {
 
 		if procInfo.Node != nil {
 			procInfo.Node = nil
+			procInfo.resetAssignedCoresMetrics()
 		}
 	}
 
@@ -417,6 +428,8 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		if cpuCount <= 0 {
 			continue
 		}
+		procInfo.RequiredCoresPhys = cpuCountPhys
+		procInfo.RequiredCores = cpuCount
 
 		node := procInfo.Node
 		if node == nil {
@@ -447,6 +460,7 @@ func (x *PinState) PinLoad(ctx *Context) error {
 		}
 
 		assignedCount := node.assignCores(ctx, procInfo)
+		procInfo.AssignedCores = assignedCount
 		if assignedCount != cpuCount {
 			if ctx.Config.Service.Pool.PinMode == config.PinModeDelayed {
 				// evict delayed vms to idle cores
