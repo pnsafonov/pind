@@ -15,12 +15,13 @@ type Static struct {
 }
 
 type Pool struct {
-	IdleLoad0 *prometheus.Desc
-	IdleLoad1 *prometheus.Desc
-	LoadFree0 *prometheus.Desc
-	LoadFree1 *prometheus.Desc
-	LoadUsed0 *prometheus.Desc
-	LoadUsed1 *prometheus.Desc
+	IdleLoad0  *prometheus.Desc
+	IdleLoad1  *prometheus.Desc
+	LoadFree0  *prometheus.Desc
+	LoadFree1  *prometheus.Desc
+	LoadUsed0  *prometheus.Desc
+	LoadUsed1  *prometheus.Desc
+	ProcsCount *prometheus.Desc
 
 	Nodes []*PoolNode
 }
@@ -60,6 +61,10 @@ func NewPool(nodesCount int) *Pool {
 	)
 	ent.LoadUsed1 = prometheus.NewDesc("pind_pool_load_used1",
 		"used cores load, like 0-100 %",
+		nil, nil,
+	)
+	ent.ProcsCount = prometheus.NewDesc("pind_procs_count",
+		"process counter",
 		nil, nil,
 	)
 
@@ -137,6 +142,7 @@ func (x *Static) Collect(ch chan<- prometheus.Metric) {
 	m3 := prometheus.MustNewConstMetric(x.PoolCollector.LoadFree1, prometheus.GaugeValue, x.State.Pool.LoadFree1)
 	m4 := prometheus.MustNewConstMetric(x.PoolCollector.LoadUsed0, prometheus.GaugeValue, x.State.Pool.LoadUsed0)
 	m5 := prometheus.MustNewConstMetric(x.PoolCollector.LoadUsed1, prometheus.GaugeValue, x.State.Pool.LoadUsed1)
+	m6 := prometheus.MustNewConstMetric(x.PoolCollector.ProcsCount, prometheus.GaugeValue, float64(len(x.State.Procs)))
 
 	t0 := x.State.Time
 	mt0 := prometheus.NewMetricWithTimestamp(t0, m0)
@@ -145,6 +151,7 @@ func (x *Static) Collect(ch chan<- prometheus.Metric) {
 	mt3 := prometheus.NewMetricWithTimestamp(t0, m3)
 	mt4 := prometheus.NewMetricWithTimestamp(t0, m4)
 	mt5 := prometheus.NewMetricWithTimestamp(t0, m5)
+	mt6 := prometheus.NewMetricWithTimestamp(t0, m6)
 
 	ch <- mt0
 	ch <- mt1
@@ -152,6 +159,7 @@ func (x *Static) Collect(ch chan<- prometheus.Metric) {
 	ch <- mt3
 	ch <- mt4
 	ch <- mt5
+	ch <- mt6
 
 	l0 := len(x.PoolCollector.Nodes)
 	for i := 0; i < l0; i++ {

@@ -30,6 +30,9 @@ pind_pool_idle_load0{instance="micronode15:9091", job="pind"}
 
 `pind_pool_load_used1` - тоже самое, что и `pind_pool_load_used0` только максимум 100%.
 
+`pind_procs_count` - число процессов (число виртуальных мащин), состояние которых отслеживает
+pind и делает привзку к ядрам
+
 ### Метрики NUMA node
 
 `pind_node_load_free0` -  загрузка свободных ядер выделенных под нагрузку (под привязку) определённой NUMA ноды.      
