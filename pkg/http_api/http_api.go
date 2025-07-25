@@ -48,6 +48,8 @@ func (x *HttpApi) GoServe() error {
 	mux.HandleFunc("/api/pin/add", x.pin)
 	mux.HandleFunc("/api/pin_list", x.pinList)
 	mux.HandleFunc("/api/pin/list", x.pinList)
+	mux.HandleFunc("/api/pin_remove", x.pinRemove)
+	mux.HandleFunc("/api/pin/remove", x.pinRemove)
 	mux.HandleFunc("/api/pin_clean", x.pinClean)
 	mux.HandleFunc("/api/pin/clean", x.pinClean)
 	x.Server = &http.Server{
